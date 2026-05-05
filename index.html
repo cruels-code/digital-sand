@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Sand - V4.3</title>
+    <title>TERMINAL SAND ART - V4.5 (CONSERVATIVE)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400&display=swap');
 
@@ -153,8 +153,8 @@
 
     <div id="menu-overlay">
         <div class="terminal-header">
-            <h2>> SYSTEM.CORE.ALGORITHMS.V4.3</h2>
-            <p>Force Field Configuration and Particle Dynamics Registry</p>
+            <h2>> SYSTEM.CORE.ALGORITHMS.V4.5</h2>
+            <p>CONSERVATION_ACTIVE // DELTA_PHYSICS // 60FPS_CLOCK</p>
         </div>
 
         <div class="settings-panel">
@@ -167,9 +167,7 @@
             </div>
             <div class="setting-group">
                 <span class="setting-label">COLOR_MAP_SELECTION (8-BIT_PRECISION)</span>
-                <div class="palette-container" id="palette-list">
-                    <!-- Palettes generated dynamically -->
-                </div>
+                <div class="palette-container" id="palette-list"></div>
             </div>
         </div>
 
@@ -193,14 +191,16 @@
         let particleCount = 0; 
         const CELL_COUNT = 5; 
         const FRICTION = 0.94; 
-        const SPEED_SCALE = 0.5;
-        const MAX_PARTICLES = 120000; // SAFETY CAP to prevent browser freeze
+        const BASE_SPEED = 0.5;
+        const MAX_PARTICLES = 120000;
 
         const config = {
             hardEdges: false,
             palette: 'cycle_rainbow', 
             grainSize: 2 
         };
+
+        let lastFrameTime = performance.now();
 
         function lerpColor(c1, c2, t) {
             return {
@@ -283,19 +283,20 @@
         class Particle {
             constructor() { this.init(); }
             init() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
+                this.x = Math.random() * (width || window.innerWidth);
+                this.y = Math.random() * (height || window.innerHeight);
                 this.vx = 0; this.vy = 0;
                 this.phase = Math.floor(Math.random() * 360);
                 this.assignColor();
             }
             assignColor() {
                 if (CYCLIC_PALETTES[config.palette]) {
-                    const c = CYCLIC_PALETTES[config.palette][this.phase];
+                    const idx = Math.floor(this.phase) % 360;
+                    const c = CYCLIC_PALETTES[config.palette][idx];
                     this.r = c.r; this.g = c.g; this.b = c.b;
                 } else {
                     const palette = STATIC_PALETTES[config.palette] || STATIC_PALETTES['spectrum'];
-                    const t = Math.max(0, Math.min(1, (this.x / width + this.y / height) / 2));
+                    const t = Math.max(0, Math.min(1, (this.x / (width || 1) + this.y / (height || 1)) / 2));
                     const scaledT = t * (palette.length - 1);
                     const i = Math.floor(scaledT);
                     const f = scaledT - i;
@@ -305,17 +306,25 @@
                 }
                 this.luma = (this.r + this.g + this.b) / 3;
             }
-            update() {
-                this.x += this.vx * SPEED_SCALE;
-                this.y += this.vy * SPEED_SCALE;
-                this.vx *= FRICTION;
-                this.vy *= FRICTION;
+            update(dt) {
+                if (isNaN(this.x) || isNaN(this.y)) this.init();
+
+                this.x += this.vx * BASE_SPEED * dt;
+                this.y += this.vy * BASE_SPEED * dt;
+                
+                const f = Math.pow(FRICTION, dt);
+                this.vx *= f; this.vy *= f;
+
                 if (CYCLIC_PALETTES[config.palette]) {
-                    this.phase = (this.phase + 1) % 360;
-                    const c = CYCLIC_PALETTES[config.palette][this.phase];
-                    this.r = c.r; this.g = c.g; this.b = c.b;
-                    this.luma = (this.r + this.g + this.b) / 3;
+                    this.phase = (this.phase + 1 * dt) % 360;
+                    if (this.phase < 0) this.phase += 360;
+                    const c = CYCLIC_PALETTES[config.palette][Math.floor(this.phase)];
+                    if (c) {
+                        this.r = c.r; this.g = c.g; this.b = c.b;
+                        this.luma = (this.r + this.g + this.b) / 3;
+                    }
                 }
+
                 if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
                 if (this.y < 0) this.y += height; else if (this.y >= height) this.y -= height;
             }
@@ -323,43 +332,38 @@
 
         class Cell {
             constructor(id) {
-                this.id = id;
-                this.x = Math.random() * (width || window.innerWidth);
+                this.id = id; this.x = Math.random() * (width || window.innerWidth);
                 this.y = Math.random() * (height || window.innerHeight);
-                this.moveTimer = 0;
-                this.reset();
+                this.moveTimer = 0; this.reset();
             }
             reset() {
                 const canvasMin = Math.min(width, height);
                 const scale = 0.26 + Math.random() * 0.26;
-                this.sizeW = canvasMin * scale;
-                this.sizeH = canvasMin * scale;
+                this.sizeW = canvasMin * scale; this.sizeH = canvasMin * scale;
                 const validIndices = enabledEffects.map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
                 this.effectIndex = validIndices.length > 0 ? validIndices[Math.floor(Math.random() * validIndices.length)] : 0;
-                this.timer = 0;
-                this.duration = 10000 + Math.random() * 5000;
-                this.rotation = 0;
-                this.strength = (0.6 + Math.random() * 2.4) * SPEED_SCALE;
+                this.timer = 0; this.duration = 10000 + Math.random() * 5000;
+                this.rotation = 0; this.strength = (0.6 + Math.random() * 2.4);
                 this.changeMovement();
             }
             changeMovement() {
                 const angle = Math.floor(Math.random() * 8) * (Math.PI / 4);
-                const speed = (0.5 + Math.random() * 4.5) * SPEED_SCALE;
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
+                const speed = (0.5 + Math.random() * 4.5);
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
                 this.moveTimer = 1000 + Math.random() * 2000;
             }
             update(dt) {
-                this.timer += dt;
-                this.moveTimer -= dt;
+                const dtMs = dt * 16.66;
+                this.timer += dtMs;
+                this.moveTimer -= dtMs;
                 if (this.timer >= this.duration || !enabledEffects[this.effectIndex]) this.reset();
                 else if (this.moveTimer <= 0) this.changeMovement();
-                this.x += this.vx; this.y += this.vy;
-                this.rotation += 0.015;
+                this.x += this.vx * dt; this.y += this.vy * dt;
+                this.rotation += 0.015 * dt;
                 if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
                 if (this.y < 0) this.y += height; else if (this.y >= height) this.y -= height;
             }
-            applyForce(p) {
+            applyForce(p, dt) {
                 if (!enabledEffects[this.effectIndex]) return;
                 let dx = p.x - this.x; let dy = p.y - this.y;
                 if (dx > width / 2) dx -= width; else if (dx < -width / 2) dx += width;
@@ -369,8 +373,8 @@
                     const normX = dx / hw; const normY = dy / hh;
                     const t = Math.max(Math.abs(normX), Math.abs(normY));
                     const inverseT = Math.max(0, 1 - t);
-                    const edgeForce = config.hardEdges ? (inverseT > 0.01 ? 1 : 0) : (inverseT * inverseT * (3 - 2 * inverseT));
-                    const s = this.strength * edgeForce;
+                    const edgeForce = config.hardEdges ? (inverseT > 0.02 ? 1 : 0) : (inverseT * inverseT * (3 - 2 * inverseT));
+                    const s = this.strength * edgeForce * dt;
                     const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
                     switch(this.effectIndex) {
                         case 0: const lz = Math.sin(this.rotation)*10+20; p.vx += (10*(normY*10-normX*10))*s*0.05; p.vy += (normX*10*(28-lz)-normY*10)*s*0.05; break;
@@ -414,8 +418,8 @@
                         case 38: const cbK = (Math.floor(p.x/30)+Math.floor(p.y/30))%2==0?1:-1; p.vx += cbK*s*3; break;
                         case 39: const dSu = Math.round((p.x+p.y)/25)*25; const dDi = Math.round((p.x-p.y)/25)*25; p.vx += ((dSu+dDi)/2-p.x)*s*0.7; p.vy += ((dSu-dDi)/2-p.y)*s*0.7; break;
                         case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(fAng)*dist-p.x)*s*0.5; p.vy += (this.y+Math.sin(fAng)*dist-p.y)*s*0.5; break;
-                        case 41: // Simplified Mandelbrot Boundary
-                            const mx0 = normX * 1.5 - 0.5; const my0 = normY * 1.5;
+                        case 41: 
+                            const mx0 = normX*1.5-0.5; const my0 = normY*1.5;
                             let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+mx0; my=2*mx*my+my0; mx=xt; mi++; } 
                             if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
                         case 42: p.vx += (Math.floor(p.x/40)*40+20-p.x)*s*0.6; p.vy += (Math.floor(p.y/40)*40+20-p.y)*s*0.6; break;
@@ -440,7 +444,10 @@
                         case 61: const hRiV = Math.floor(p.luma/50)%2==0?1:-1; p.vx += Math.cos(angle+1.57)*hRiV*s*5; p.vy += Math.sin(angle+1.57)*hRiV*s*5; break;
                         case 62: p.vx += Math.cos(angle)*(1-p.luma/255)*s*7; p.vy += Math.sin(angle)*(1-p.luma/255)*s*7; break;
                         case 63: const warmV = (p.r+p.g)/2 > p.b ? 1 : -1; p.vx += warmV*s*5; break;
-                        case 64: const lStep = height / 6; const lTargetY = Math.floor(p.luma / 42) * lStep + lStep/2; p.vy += (lTargetY - (p.y - this.y + height/2) % height) * s * 0.1; break;
+                        case 64: // Luma Staircase (Non-wrapping version)
+                            const lStep = height / 6; const lTargetY = Math.floor(p.luma / 42.5) * lStep + lStep/2;
+                            let relY = (p.y - this.y + height/2) % height;
+                            p.vy += (lTargetY - relY) * s * 0.1; break;
                         case 65: if(p.r > p.g && p.r > p.b) { p.vx += (-hw - dx)*s*0.2; p.vy += (-hh - dy)*s*0.2; } else if(p.g > p.r && p.g > p.b) { p.vx += (hw - dx)*s*0.2; p.vy += (-hh - dy)*s*0.2; } else if(p.b > p.r && p.b > p.g) { p.vx += (-hw - dx)*s*0.2; p.vy += (hh - dy)*s*0.2; } break;
                         case 66: const sD = (Math.max(p.r,p.g,p.b) - Math.min(p.r,p.g,p.b)) > 100 ? 1 : -1; p.vx += Math.cos(angle) * sD * s * 6; p.vy += Math.sin(angle) * sD * s * 6; break;
                         case 67: const hA = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(hA)*dist - dx) * s * 0.3; p.vy += (Math.sin(hA)*dist - dy) * s * 0.3; break;
@@ -455,9 +462,15 @@
             }
         }
 
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+        // CONSERVATIVE ADJUSTMENT: Updates particle count without destroying current state
+        function adjustParticles() {
+            if (particles.length > particleCount) {
+                particles.length = particleCount; // Conserves exactly N particles
+            } else {
+                while (particles.length < particleCount) {
+                    particles.push(new Particle()); // Adds new grains to empty slots
+                }
+            }
         }
 
         function buildMenu() {
@@ -500,7 +513,7 @@
 
         function selectPalette(e, key) {
             document.querySelectorAll('[data-palette]').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
+            if (e.target) e.target.classList.add('active');
             config.palette = key;
             particles.forEach(p => p.assignColor());
         }
@@ -508,43 +521,16 @@
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
+            
             let coverageRatio = 0.10;
             if (config.grainSize === 2) coverageRatio = 0.15;
             else if (config.grainSize === 4) coverageRatio = 0.20;
+            
             particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
-            initParticles();
+            
+            adjustParticles();
             cells = [];
             for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
-        }
-
-        let lastTime = 0;
-        function loop(timestamp) {
-            const dt = timestamp - lastTime;
-            lastTime = timestamp;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
-            ctx.fillRect(0, 0, width, height);
-            cells.forEach(cell => cell.update(dt));
-            const imageData = ctx.getImageData(0, 0, width, height);
-            const data = imageData.data;
-            const gs = config.grainSize;
-
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                for (let j = 0; j < cells.length; j++) cells[j].applyForce(p);
-                p.update();
-                const px = Math.floor(p.x); const py = Math.floor(p.y);
-                for (let gy = 0; gy < gs; gy++) {
-                    for (let gx = 0; gx < gs; gx++) {
-                        const curX = px + gx; const curY = py + gy;
-                        if (curX >= 0 && curX < width && curY >= 0 && curY < height) {
-                            const idx = (curY * width + curX) * 4;
-                            data[idx] = p.r; data[idx+1] = p.g; data[idx+2] = p.b; data[idx+3] = 255;
-                        }
-                    }
-                }
-            }
-            ctx.putImageData(imageData, 0, 0);
-            requestAnimationFrame(loop);
         }
 
         function fisherYates(array) {
@@ -553,6 +539,40 @@
                 [array[i], array[j]] = [array[j], array[i]];
             }
             return array;
+        }
+
+        function loop(timestamp) {
+            const dt = Math.min(2.0, (timestamp - lastFrameTime) / 16.66); 
+            lastFrameTime = timestamp;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+            ctx.fillRect(0, 0, width, height);
+            
+            cells.forEach(cell => cell.update(dt));
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            const gs = config.grainSize;
+
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                for (let j = 0; j < cells.length; j++) cells[j].applyForce(p, dt);
+                p.update(dt);
+                
+                const px = Math.floor(p.x); const py = Math.floor(p.y);
+                for (let gy = 0; gy < gs; gy++) {
+                    const py_off = py + gy;
+                    if (py_off < 0 || py_off >= height) continue;
+                    for (let gx = 0; gx < gs; gx++) {
+                        const px_off = px + gx;
+                        if (px_off < 0 || px_off >= width) continue;
+                        
+                        const idx = (py_off * width + px_off) * 4;
+                        data[idx] = p.r; data[idx+1] = p.g; data[idx+2] = p.b; data[idx+3] = 255;
+                    }
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+            requestAnimationFrame(loop);
         }
 
         document.getElementById('btn-soft').addEventListener('click', (e) => {
@@ -564,11 +584,16 @@
             document.getElementById('btn-soft').classList.remove('active');
         });
 
-        canvas.addEventListener('click', () => { menu.classList.add('active'); buildMenu(); });
+        canvas.addEventListener('click', (e) => { 
+            if (e.target === canvas) { menu.classList.add('active'); buildMenu(); }
+        });
         document.getElementById('close-menu').addEventListener('click', () => { menu.classList.remove('active'); });
+        
         document.getElementById('toggle-all').addEventListener('click', () => {
             const targetState = !enabledEffects.some(e => e); 
-            enabledEffects.fill(targetState); buildMenu(); initParticles(); cells.forEach(c => c.reset());
+            enabledEffects.fill(targetState); buildMenu();
+            // Do not re-init particles to ensure conservation
+            cells.forEach(c => c.reset());
         });
 
         document.getElementById('randomise').addEventListener('click', () => {
@@ -586,6 +611,7 @@
             let dIdx = 0; while(indices.size < 8 && dIdx < dynIndices.length) indices.add(dynIndices[dIdx++]);
             indices.forEach(idx => enabledEffects[idx] = true);
 
+            // 5% Weight for Cyclic (0.05 / (0.05 + 0.95))
             if (Math.random() < 0.05) {
                 const keys = Object.keys(CYCLIC_PALETTES);
                 config.palette = keys[Math.floor(Math.random() * keys.length)];
@@ -595,10 +621,14 @@
             }
 
             config.grainSize = [1, 2, 4][Math.floor(Math.random() * 3)];
-            resize(); buildMenu();
+            
+            // Re-calculate size while conserving existing particles
+            resize(); 
+            buildMenu();
         });
 
         window.addEventListener('resize', resize);
+        // Start simulation
         resize();
         requestAnimationFrame(loop);
     </script>
