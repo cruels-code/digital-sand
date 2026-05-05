@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL SAND ART - V4.5 (CONSERVATIVE)</title>
+    <title>TERMINAL SAND ART - V4.5 (STABLE_CONSERVATION)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400&display=swap');
 
@@ -154,7 +154,7 @@
     <div id="menu-overlay">
         <div class="terminal-header">
             <h2>> SYSTEM.CORE.ALGORITHMS.V4.5</h2>
-            <p>CONSERVATION_ACTIVE // DELTA_PHYSICS // 60FPS_CLOCK</p>
+            <p>CONSERVATION_ACTIVE // DELTA_PHYSICS // STABLE_STATE</p>
         </div>
 
         <div class="settings-panel">
@@ -308,23 +308,15 @@
             }
             update(dt) {
                 if (isNaN(this.x) || isNaN(this.y)) this.init();
-
                 this.x += this.vx * BASE_SPEED * dt;
                 this.y += this.vy * BASE_SPEED * dt;
-                
                 const f = Math.pow(FRICTION, dt);
                 this.vx *= f; this.vy *= f;
-
                 if (CYCLIC_PALETTES[config.palette]) {
                     this.phase = (this.phase + 1 * dt) % 360;
-                    if (this.phase < 0) this.phase += 360;
                     const c = CYCLIC_PALETTES[config.palette][Math.floor(this.phase)];
-                    if (c) {
-                        this.r = c.r; this.g = c.g; this.b = c.b;
-                        this.luma = (this.r + this.g + this.b) / 3;
-                    }
+                    if (c) { this.r = c.r; this.g = c.g; this.b = c.b; this.luma = (this.r + this.g + this.b) / 3; }
                 }
-
                 if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
                 if (this.y < 0) this.y += height; else if (this.y >= height) this.y -= height;
             }
@@ -418,10 +410,7 @@
                         case 38: const cbK = (Math.floor(p.x/30)+Math.floor(p.y/30))%2==0?1:-1; p.vx += cbK*s*3; break;
                         case 39: const dSu = Math.round((p.x+p.y)/25)*25; const dDi = Math.round((p.x-p.y)/25)*25; p.vx += ((dSu+dDi)/2-p.x)*s*0.7; p.vy += ((dSu-dDi)/2-p.y)*s*0.7; break;
                         case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(fAng)*dist-p.x)*s*0.5; p.vy += (this.y+Math.sin(fAng)*dist-p.y)*s*0.5; break;
-                        case 41: 
-                            const mx0 = normX*1.5-0.5; const my0 = normY*1.5;
-                            let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+mx0; my=2*mx*my+my0; mx=xt; mi++; } 
-                            if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
+                        case 41: const mx0 = normX*1.5-0.5; const my0 = normY*1.5; let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+mx0; my=2*mx*my+my0; mx=xt; mi++; } if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
                         case 42: p.vx += (Math.floor(p.x/40)*40+20-p.x)*s*0.6; p.vy += (Math.floor(p.y/40)*40+20-p.y)*s*0.6; break;
                         case 43: const hDiv = 1 << Math.round(dist*0.05%4+1); const hDir = (Math.floor(normX*hDiv/2+hDiv/2)+Math.floor(normY*hDiv/2+hDiv/2))%2==0?1:-1; p.vx += hDir*Math.sin(this.rotation)*s*5; p.vy += hDir*Math.cos(this.rotation)*s*5; break;
                         case 44: const tAng = Math.atan2(p.y-height, p.x-width/2); p.vx += Math.cos(tAng)*s*4; p.vy += Math.sin(tAng)*s*4; break;
@@ -444,10 +433,7 @@
                         case 61: const hRiV = Math.floor(p.luma/50)%2==0?1:-1; p.vx += Math.cos(angle+1.57)*hRiV*s*5; p.vy += Math.sin(angle+1.57)*hRiV*s*5; break;
                         case 62: p.vx += Math.cos(angle)*(1-p.luma/255)*s*7; p.vy += Math.sin(angle)*(1-p.luma/255)*s*7; break;
                         case 63: const warmV = (p.r+p.g)/2 > p.b ? 1 : -1; p.vx += warmV*s*5; break;
-                        case 64: // Luma Staircase (Non-wrapping version)
-                            const lStep = height / 6; const lTargetY = Math.floor(p.luma / 42.5) * lStep + lStep/2;
-                            let relY = (p.y - this.y + height/2) % height;
-                            p.vy += (lTargetY - relY) * s * 0.1; break;
+                        case 64: const lStep = height / 6; const lTargetY = Math.floor(p.luma / 42.5) * lStep + lStep/2; p.vy += (lTargetY - ((p.y - this.y + height/2) % height)) * s * 0.1; break;
                         case 65: if(p.r > p.g && p.r > p.b) { p.vx += (-hw - dx)*s*0.2; p.vy += (-hh - dy)*s*0.2; } else if(p.g > p.r && p.g > p.b) { p.vx += (hw - dx)*s*0.2; p.vy += (-hh - dy)*s*0.2; } else if(p.b > p.r && p.b > p.g) { p.vx += (-hw - dx)*s*0.2; p.vy += (hh - dy)*s*0.2; } break;
                         case 66: const sD = (Math.max(p.r,p.g,p.b) - Math.min(p.r,p.g,p.b)) > 100 ? 1 : -1; p.vx += Math.cos(angle) * sD * s * 6; p.vy += Math.sin(angle) * sD * s * 6; break;
                         case 67: const hA = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(hA)*dist - dx) * s * 0.3; p.vy += (Math.sin(hA)*dist - dy) * s * 0.3; break;
@@ -462,15 +448,9 @@
             }
         }
 
-        // CONSERVATIVE ADJUSTMENT: Updates particle count without destroying current state
         function adjustParticles() {
-            if (particles.length > particleCount) {
-                particles.length = particleCount; // Conserves exactly N particles
-            } else {
-                while (particles.length < particleCount) {
-                    particles.push(new Particle()); // Adds new grains to empty slots
-                }
-            }
+            if (particles.length > particleCount) { particles.length = particleCount; } 
+            else { while (particles.length < particleCount) { particles.push(new Particle()); } }
         }
 
         function buildMenu() {
@@ -484,9 +464,7 @@
                         const input = div.querySelector('input');
                         input.checked = !input.checked;
                         enabledEffects[idx] = input.checked;
-                    } else {
-                        enabledEffects[idx] = e.target.checked;
-                    }
+                    } else { enabledEffects[idx] = e.target.checked; }
                 });
                 effectsGrid.appendChild(div);
             });
@@ -513,7 +491,7 @@
 
         function selectPalette(e, key) {
             document.querySelectorAll('[data-palette]').forEach(b => b.classList.remove('active'));
-            if (e.target) e.target.classList.add('active');
+            if (e && e.target) e.target.classList.add('active');
             config.palette = key;
             particles.forEach(p => p.assignColor());
         }
@@ -521,13 +499,8 @@
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            
-            let coverageRatio = 0.10;
-            if (config.grainSize === 2) coverageRatio = 0.15;
-            else if (config.grainSize === 4) coverageRatio = 0.20;
-            
+            let coverageRatio = config.grainSize === 2 ? 0.15 : (config.grainSize === 4 ? 0.20 : 0.10);
             particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
-            
             adjustParticles();
             cells = [];
             for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
@@ -544,10 +517,8 @@
         function loop(timestamp) {
             const dt = Math.min(2.0, (timestamp - lastFrameTime) / 16.66); 
             lastFrameTime = timestamp;
-
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
             ctx.fillRect(0, 0, width, height);
-            
             cells.forEach(cell => cell.update(dt));
             const imageData = ctx.getImageData(0, 0, width, height);
             const data = imageData.data;
@@ -557,7 +528,6 @@
                 const p = particles[i];
                 for (let j = 0; j < cells.length; j++) cells[j].applyForce(p, dt);
                 p.update(dt);
-                
                 const px = Math.floor(p.x); const py = Math.floor(p.y);
                 for (let gy = 0; gy < gs; gy++) {
                     const py_off = py + gy;
@@ -565,7 +535,6 @@
                     for (let gx = 0; gx < gs; gx++) {
                         const px_off = px + gx;
                         if (px_off < 0 || px_off >= width) continue;
-                        
                         const idx = (py_off * width + px_off) * 4;
                         data[idx] = p.r; data[idx+1] = p.g; data[idx+2] = p.b; data[idx+3] = 255;
                     }
@@ -584,16 +553,11 @@
             document.getElementById('btn-soft').classList.remove('active');
         });
 
-        canvas.addEventListener('click', (e) => { 
-            if (e.target === canvas) { menu.classList.add('active'); buildMenu(); }
-        });
+        canvas.addEventListener('click', (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } });
         document.getElementById('close-menu').addEventListener('click', () => { menu.classList.remove('active'); });
-        
         document.getElementById('toggle-all').addEventListener('click', () => {
             const targetState = !enabledEffects.some(e => e); 
-            enabledEffects.fill(targetState); buildMenu();
-            // Do not re-init particles to ensure conservation
-            cells.forEach(c => c.reset());
+            enabledEffects.fill(targetState); buildMenu(); cells.forEach(c => c.reset());
         });
 
         document.getElementById('randomise').addEventListener('click', () => {
@@ -602,16 +566,15 @@
             const dynIndices = EFFECT_NAMES.map((n, i) => !n.includes('[O]') && !n.includes('[C]') ? i : -1).filter(i => i !== -1);
             const colIndices = EFFECT_NAMES.map((n, i) => n.includes('[C]') ? i : -1).filter(i => i !== -1);
             
-            const indices = new Set();
-            indices.add(colIndices[Math.floor(Math.random() * colIndices.length)]);
+            const selected = new Set();
+            selected.add(colIndices[Math.floor(Math.random() * colIndices.length)]);
             const numOrg = Math.random() < 0.5 ? 3 : 4;
             fisherYates(orgIndices);
-            for(let i = 0; i < numOrg; i++) indices.add(orgIndices[i]);
+            for(let i = 0; i < numOrg; i++) selected.add(orgIndices[i]);
             fisherYates(dynIndices);
-            let dIdx = 0; while(indices.size < 8 && dIdx < dynIndices.length) indices.add(dynIndices[dIdx++]);
-            indices.forEach(idx => enabledEffects[idx] = true);
+            let dIdx = 0; while(selected.size < 8 && dIdx < dynIndices.length) selected.add(dynIndices[dIdx++]);
+            selected.forEach(idx => enabledEffects[idx] = true);
 
-            // 5% Weight for Cyclic (0.05 / (0.05 + 0.95))
             if (Math.random() < 0.05) {
                 const keys = Object.keys(CYCLIC_PALETTES);
                 config.palette = keys[Math.floor(Math.random() * keys.length)];
@@ -621,14 +584,10 @@
             }
 
             config.grainSize = [1, 2, 4][Math.floor(Math.random() * 3)];
-            
-            // Re-calculate size while conserving existing particles
-            resize(); 
-            buildMenu();
+            resize(); buildMenu();
         });
 
         window.addEventListener('resize', resize);
-        // Start simulation
         resize();
         requestAnimationFrame(loop);
     </script>
