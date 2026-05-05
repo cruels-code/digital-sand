@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERMINAL SAND ART - V3.8</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            color: #00ff00;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+        }
+        #menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            z-index: 100;
+            overflow-y: auto;
+            border: 2px solid #333;
+        }
+        #menu-overlay.active {
+            display: flex;
+        }
+        .terminal-header {
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        .terminal-header h2 {
+            margin: 0;
+            font-weight: 400;
+            letter-spacing: 2px;
+            font-size: 24px;
+        }
+        .terminal-header p {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        .settings-panel {
+            background: #0a0a0a;
+            padding: 20px;
+            border: 1px solid #333;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            justify-content: flex-start;
+        }
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .setting-label {
+            font-size: 10px;
+            color: #00ff00;
+            opacity: 0.8;
+            text-transform: uppercase;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 1100px;
+        }
+        .btn {
+            background: transparent;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: 'Fira Code', monospace;
+            font-size: 12px;
+            transition: all 0.1s;
+            text-transform: uppercase;
+        }
+        .btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        .btn.active {
+            background: #00ff00;
+            color: #000;
+        }
+        #effects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 8px;
+            width: 100%;
+            max-width: 1100px;
+            padding-bottom: 60px;
+        }
+        .effect-item {
+            border: 1px solid #222;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .effect-item:hover {
+            border-color: #00ff00;
+        }
+        .effect-item input {
+            cursor: pointer;
+            filter: grayscale(1) invert(1) brightness(2);
+        }
+        .effect-name {
+            font-size: 11px;
+            color: #888;
+        }
+        .effect-item:has(input:checked) .effect-name {
+            color: #00ff00;
+        }
+        .palette-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="menu-overlay">
+        <div class="terminal-header">
+            <h2>> SYSTEM.CORE.ALGORITHMS</h2>
+            <p>Force Field Configuration and Particle Dynamics Registry</p>
+        </div>
+
+        <div class="settings-panel">
+            <div class="setting-group">
+                <span class="setting-label">FORCE_EDGE_MODEL</span>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn active" id="btn-soft">[ SOFT ]</button>
+                    <button class="btn" id="btn-hard">[ HARD ]</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <span class="setting-label">COLOR_MAP_SELECTION (8-BIT_PRECISION)</span>
+                <div class="palette-container">
+                    <button class="btn active" data-palette="cycle" id="pal-cycle">[ CHROMA_CYCLE ]</button>
+                    <button class="btn" data-palette="spectrum">Spectrum</button>
+                    <button class="btn" data-palette="neon">Neon</button>
+                    <button class="btn" data-palette="sunset">Solar</button>
+                    <button class="btn" data-palette="deepsea">Deepsea</button>
+                    <button class="btn" data-palette="sand">Sand</button>
+                    <button class="btn" data-palette="matrix">Matrix</button>
+                    <button class="btn" data-palette="cyber">Cyberpunk</button>
+                    <button class="btn" data-palette="magma">Magma</button>
+                    <button class="btn" data-palette="frost">Frost</button>
+                    <button class="btn" data-palette="forest">Forest</button>
+                    <button class="btn" data-palette="vapor">Vaporwave</button>
+                    <button class="btn" data-palette="royal">Royal</button>
+                    <button class="btn" data-palette="autumn">Autumn</button>
+                    <button class="btn" data-palette="toxic">Toxic</button>
+                    <button class="btn" data-palette="berry">Berry</button>
+                    <button class="btn" data-palette="midnight">Midnight</button>
+                    <button class="btn" data-palette="coral">Coral</button>
+                    <button class="btn" data-palette="synth">Synthwave</button>
+                    <button class="btn" data-palette="pastel">V-Pastel</button>
+                    <button class="btn" data-palette="monogold">Gold_Ref</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="toggle-all">[ Toggle_All ]</button>
+            <button class="btn" id="randomise">[ RANDOMISE ]</button>
+            <button class="btn" id="close-menu">[ RESUME_EXECUTION ]</button>
+        </div>
+        <div id="effects-grid"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const menu = document.getElementById('menu-overlay');
+        const effectsGrid = document.getElementById('effects-grid');
+
+        let width, height;
+        let particles = [];
+        let cells = [];
+        
+        let particleCount = 0; 
+        const CELL_COUNT = 5; 
+        const FRICTION = 0.94; 
+        const SPEED_SCALE = 0.5;
+
+        const config = {
+            hardEdges: false,
+            palette: 'cycle' 
+        };
+
+        const SPECTRUM_LUT = [];
+        for (let i = 0; i < 360; i++) {
+            const r = Math.round(255 * Math.max(0, Math.min(1, Math.abs((i + 360) % 360 / 60 - 3) - 1)));
+            const g = Math.round(255 * Math.max(0, Math.min(1, 2 - Math.abs((i + 240) % 360 / 60 - 3))));
+            const b = Math.round(255 * Math.max(0, Math.min(1, 2 - Math.abs((i + 120) % 360 / 60 - 3))));
+            SPECTRUM_LUT.push({r, g, b});
+        }
+        
+        const PALETTES = {
+            spectrum: [{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}],
+            neon: [{r:255,g:0,b:128},{r:0,g:255,b:255},{r:128,g:0,b:255},{r:255,g:255,b:255}],
+            sunset: [{r:255,g:50,b:0},{r:255,g:200,b:0},{r:100,g:0,b:150},{r:255,g:255,b:200}],
+            deepsea: [{r:0,g:20,b:50},{r:0,g:255,b:150},{r:0,g:100,b:255},{r:200,g:255,b:255}],
+            sand: [{r:230,g:204,b:178},{r:221,g:184,b:146},{r:176,g:137,b:104},{r:127,g:85,b:57},{r:254,g:250,b:224}],
+            matrix: [{r:0,g:40,b:0},{r:0,g:255,b:70},{r:20,g:100,b:20},{r:0,g:255,b:0}],
+            cyber: [{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:0},{r:255,g:0,b:100}],
+            magma: [{r:40,g:0,b:0},{r:255,g:0,b:0},{r:255,g:120,b:0},{r:255,g:255,b:0}],
+            frost: [{r:0,g:50,b:100},{r:100,g:200,b:255},{r:200,g:255,b:255},{r:255,g:255,b:255}],
+            forest: [{r:0,g:20,b:10},{r:34,g:139,b:34},{r:107,g:142,b:35},{r:210,g:180,b:140}],
+            vapor: [{r:255,g:113,b:206},{r:1,g:205,b:254},{r:5,g:255,b:161},{r:185,g:103,b:255},{r:255,g:251,b:150}],
+            royal: [{r:75,g:0,b:130},{r:255,g:215,b:0},{r:139,g:0,b:139},{r:218,g:165,b:32}],
+            autumn: [{r:139,g:69,b:19},{r:210,g:105,b:30},{r:255,g:140,b:0},{r:255,g:69,b:0}],
+            toxic: [{r:173,g:255,b:47},{r:148,g:0,b:211},{r:50,g:205,b:50},{r:139,g:0,b:139}],
+            berry: [{r:0,g:0,b:139},{r:220,g:20,b:60},{r:199,g:21,b:133},{r:75,g:0,b:130}],
+            midnight: [{r:25,g:25,b:112},{r:0,g:0,b:205},{r:72,g:61,b:139},{r:176,g:196,b:222}],
+            coral: [{r:255,g:127,b:80},{r:64,g:224,b:208},{r:255,g:99,b:71},{r:127,g:255,b:212}],
+            synth: [{r:36,g:0,b:70},{r:90,g:24,b:154},{r:157,g:78,b:221},{r:255,g:0,b:110}],
+            pastel: [{r:255,g:179,b:186},{r:255,g:255,b:186},{r:186,g:255,b:201},{r:186,g:225,b:255}],
+            monogold: [{r:101,g:67,b:33},{r:255,g:215,b:0},{r:218,g:165,b:32},{r:255,g:255,b:150}]
+        };
+
+        const EFFECT_NAMES = [
+            "Lorenz Attractor", "Galaxy Spiral", "Wind Gusts", "Ripples", "Hex Grid [O]", 
+            "Diamond Lattice [O]", "Vortex", "Divergence", "Convergence", "Shear",
+            "Radial Comb", "Cross Wind", "Vertical Gusts", "Orbitals", "Square Wave", 
+            "Bubble Repulsion", "Chaos Mix", "Warp Drive", "Mirror Center", "Crystallize [O]",
+            "Turbulent Flow", "Sine Sieve", "Expansion Pulse", "Tangent Twist", "DNA Spiral",
+            "Perlin Drift", "Concentric Spin", "Zoom Out", "Magnetic North", "Maze Runner",
+            "Concentric Squares [O]", "Dotted Grid [O]", "Vertical Pinstripes [O]", "Diagonal Crosshatch [O]", "Honeycomb [O]",
+            "Radial Spokes [O]", "Ziggurat [O]", "Dotted Spirals [O]", "Checkerboard Push [O]", "Diamond Dot Array [O]",
+            "Fibonacci Spiral [O]", "Mandelbrot Boundary [O]", "Voronoi Cells [O]", "Hilbert Curve [O]", "Binary Tree [O]",
+            "Isometric Cube [O]", "Yin Yang Symbol [O]", "Radar Sweep [O]", "Circuit Board [O]", "Tartan Plaid [O]",
+            "Mandala Radial [O]", "Archimedean Coil [O]", "Serendipity Dots [O]", "Weave Lattice [O]",
+            "Luma Attraction [C]", "RGB Spectral Drift [C]", "Chrome Saturation Sort [C]", "Red/Blue Divergence [C]",
+            "Green Channel Sieve [C]", "Color Gradient Snap [C]", "Channel Gravity [C]", "Hue Orbital Ring [C]",
+            "Inverse Luma Push [C]", "Warm/Cool Shear [C]",
+            "Luma Staircase [C]", "RGB Corner Sort [C]", "Saturation Barrier [C]", "Hue Angular Mapper [C]", "Spectral Banding [C]",
+            "Primary Spin [C]", "Intensity Well [C]", "CMY Divergence [C]", "Chromatic Wave [C]", "Color Grid Snap [C]"
+        ];
+
+        let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
+
+        function lerpColor(c1, c2, t) {
+            return {
+                r: Math.round(c1.r + (c2.r - c1.r) * t),
+                g: Math.round(c1.g + (c2.g - c1.g) * t),
+                b: Math.round(c1.b + (c2.b - c1.b) * t)
+            };
+        }
+
+        class Particle {
+            constructor() { this.init(); }
+            init() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = 0; this.vy = 0;
+                this.phase = Math.floor(Math.random() * 360);
+                this.assignColor();
+            }
+            assignColor() {
+                if (config.palette === 'cycle') {
+                    const c = SPECTRUM_LUT[this.phase];
+                    this.r = c.r; this.g = c.g; this.b = c.b;
+                } else {
+                    const palette = PALETTES[config.palette];
+                    const t = (this.x / width + this.y / height) / 2;
+                    const scaledT = t * (palette.length - 1);
+                    const i = Math.floor(scaledT);
+                    const f = scaledT - i;
+                    const nextI = Math.min(i + 1, palette.length - 1);
+                    const c = lerpColor(palette[i], palette[nextI], f);
+                    this.r = c.r; this.g = c.g; this.b = c.b;
+                }
+                this.luma = (this.r + this.g + this.b) / 3;
+            }
+            update() {
+                this.x += this.vx * SPEED_SCALE;
+                this.y += this.vy * SPEED_SCALE;
+                this.vx *= FRICTION;
+                this.vy *= FRICTION;
+                if (config.palette === 'cycle') {
+                    this.phase = (this.phase + 1) % 360;
+                    const c = SPECTRUM_LUT[this.phase];
+                    this.r = c.r; this.g = c.g; this.b = c.b;
+                    this.luma = (this.r + this.g + this.b) / 3;
+                }
+                if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
+                if (this.y < 0) this.y += height; else if (this.y >= height) this.y -= height;
+            }
+        }
+
+        class Cell {
+            constructor(id) {
+                this.id = id;
+                this.x = Math.random() * (width || window.innerWidth);
+                this.y = Math.random() * (height || window.innerHeight);
+                this.moveTimer = 0;
+                this.reset();
+            }
+            reset() {
+                const canvasMin = Math.min(width, height);
+                const scale = 0.26 + Math.random() * 0.26;
+                this.sizeW = canvasMin * scale;
+                this.sizeH = canvasMin * scale;
+                
+                const validIndices = enabledEffects.map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
+                this.effectIndex = validIndices.length > 0 ? validIndices[Math.floor(Math.random() * validIndices.length)] : 0;
+                this.timer = 0;
+                this.duration = 10000 + Math.random() * 5000;
+                this.rotation = 0;
+                this.strength = (0.6 + Math.random() * 2.4) * SPEED_SCALE;
+                this.changeMovement();
+            }
+            changeMovement() {
+                const angle = Math.floor(Math.random() * 8) * (Math.PI / 4);
+                const speed = (0.5 + Math.random() * 4.5) * SPEED_SCALE;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.moveTimer = 1000 + Math.random() * 2000;
+            }
+            update(dt) {
+                this.timer += dt;
+                this.moveTimer -= dt;
+                if (this.timer >= this.duration || !enabledEffects[this.effectIndex]) this.reset();
+                else if (this.moveTimer <= 0) this.changeMovement();
+                this.x += this.vx; this.y += this.vy;
+                this.rotation += 0.015;
+                if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
+                if (this.y < 0) this.y += height; else if (this.y >= height) this.y -= height;
+            }
+            applyForce(p) {
+                if (!enabledEffects[this.effectIndex]) return;
+                let dx = p.x - this.x; let dy = p.y - this.y;
+                if (dx > width / 2) dx -= width; else if (dx < -width / 2) dx += width;
+                if (dy > height / 2) dy -= height; else if (dy < -height / 2) dy += height;
+                const hw = this.sizeW / 2; const hh = this.sizeH / 2;
+                if (Math.abs(dx) < hw && Math.abs(dy) < hh) {
+                    const normX = dx / hw; const normY = dy / hh;
+                    const edgeForce = config.hardEdges ? 1 : (1 - Math.max(Math.abs(normX), Math.abs(normY)));
+                    const s = this.strength * edgeForce;
+                    const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
+                    switch(this.effectIndex) {
+                        case 0: const lz = Math.sin(this.rotation)*10+20; p.vx += (10*(normY*10-normX*10))*s*0.05; p.vy += (normX*10*(28-lz)-normY*10)*s*0.05; break;
+                        case 1: p.vx += Math.cos(angle+1.5+this.rotation)*s*4; p.vy += Math.sin(angle+1.5+this.rotation)*s*4; break;
+                        case 2: p.vx += Math.sin(p.y*0.01+this.rotation*5)*s*6; break;
+                        case 3: const rV = Math.sin(dist*0.1-this.rotation*10); p.vx += Math.cos(angle)*rV*s*3; p.vy += Math.sin(angle)*rV*s*3; break;
+                        case 4: p.vx += (Math.round(p.x/30)*30-p.x)*s*0.4; p.vy += (Math.round(p.y/25)*25-p.y)*s*0.4; break;
+                        case 5: p.vx += Math.cos((Math.abs(p.x%40-20)+Math.abs(p.y%40-20)))*s*2; p.vy += Math.sin((Math.abs(p.x%40-20)+Math.abs(p.y%40-20)))*s*2; break;
+                        case 6: p.vx += Math.cos(angle+1.57)*s*4; p.vy += Math.sin(angle+1.57)*s*4; break;
+                        case 7: p.vx += Math.cos(angle)*s*5; p.vy += Math.sin(angle)*s*5; break;
+                        case 8: p.vx -= Math.cos(angle)*s*4; p.vy -= Math.sin(angle)*s*4; break;
+                        case 9: p.vx += (normY>0?1:-1)*s*5; break;
+                        case 10: if (Math.abs(Math.sin((angle+this.rotation)*8))>0.7){ p.vx += Math.cos(angle+1.57)*s*4; p.vy += Math.sin(angle+1.57)*s*4; } break;
+                        case 11: p.vx += Math.sin(this.rotation)*s*5; p.vy += Math.cos(this.rotation)*s*5; break;
+                        case 12: p.vy += Math.cos(p.x*0.02+this.rotation*3)*s*5; break;
+                        case 13: const od = Math.sin(dist*0.15-this.rotation*4); p.vx += Math.cos(angle+1.57)*od*s*5; p.vy += Math.sin(angle+1.57)*od*s*5; break;
+                        case 14: p.vx += Math.sign(Math.sin(p.y*0.1))*s*3; break;
+                        case 15: if (dist < hw/2) { p.vx += Math.cos(angle)*s*8; p.vy += Math.sin(angle)*s*8; } break;
+                        case 16: p.vx += (Math.random()-0.5)*s*10; p.vy += (Math.random()-0.5)*s*10; break;
+                        case 17: p.vx += Math.cos(angle)*(1+s*3); p.vy += Math.sin(angle)*(1+s*3); break;
+                        case 18: p.vx -= (normX*5)*s; break;
+                        case 19: p.vx += (Math.round(p.x/15)*15-p.x)*s*0.6; p.vy += (Math.round(p.y/15)*15-p.y)*s*0.6; break;
+                        case 20: p.vx += Math.sin(p.y*0.05+this.rotation)*s*3; p.vy += Math.sin(p.x*0.05-this.rotation)*s*3; break;
+                        case 21: if (Math.sin(p.x*0.1)*Math.sin(p.y*0.1)>0) p.vx += 2*s; break;
+                        case 22: const pulse = Math.sin(this.rotation*4)*5; p.vx += Math.cos(angle)*pulse*s; p.vy += Math.sin(angle)*pulse*s; break;
+                        case 23: p.vx += Math.tan(normX*0.5)*s*2; p.vy += Math.cos(normY*3)*s*3; break;
+                        case 24: p.vx += Math.sin(p.y*0.05+this.rotation*2)*s*5; break;
+                        case 25: p.vx += Math.cos(p.x*0.01+p.y*0.01+this.rotation)*s*4; p.vy += Math.sin(p.x*0.01-p.y*0.01+this.rotation)*s*4; break;
+                        case 26: const cdD = Math.floor(dist/20)%2==0?1:-1; p.vx += Math.cos(angle+1.57)*cdD*s*4; p.vy += Math.sin(angle+1.57)*cdD*s*4; break;
+                        case 27: p.vx += dx*0.05*s; p.vy += dy*0.05*s; break;
+                        case 28: p.vy -= 2*s; break;
+                        case 29: const mR = Math.floor(p.x/20)%2 == Math.floor(p.y/20)%2 ? 1 : -1; p.vx += mR*s*4; break;
+                        case 30: const sxS = Math.round(dx/25)*25; const syS = Math.round(dy/25)*25; p.vx += (sxS-dx)*s*0.5; p.vy += (syS-dy)*s*0.5; break;
+                        case 31: p.vx += (Math.round(p.x/15)*15-p.x)*s*0.8; p.vy += (Math.round(p.y/15)*15-p.y)*s*0.8; break;
+                        case 32: p.vx += (Math.round(p.x/12)*12-p.x)*s*0.9; break;
+                        case 33: const ch1 = (p.x+p.y)%30; const ch2 = (p.x-p.y)%30; p.vx += (ch1<ch2?1:-1)*s*2; break;
+                        case 34: p.vx += (Math.round(p.x/34)*34-p.x)*s*0.3; p.vy += (Math.round(p.y/20)*20-p.y)*s*0.3; break;
+                        case 35: const spA = Math.round(angle*4)/4; p.vx += (Math.cos(spA)*dist-dx)*s*0.4; p.vy += (Math.sin(spA)*dist-dy)*s*0.4; break;
+                        case 36: p.vx += (Math.floor(p.x/40)*40+(p.y%40)-p.x)*s*0.5; break;
+                        case 37: const sdA = angle+dist*0.1; p.vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; p.vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break;
+                        case 38: const cbK = (Math.floor(p.x/30)+Math.floor(p.y/30))%2==0?1:-1; p.vx += cbK*s*3; break;
+                        case 39: const dSu = Math.round((p.x+p.y)/25)*25; const dDi = Math.round((p.x-p.y)/25)*25; p.vx += ((dSu+dDi)/2-p.x)*s*0.7; p.vy += ((dSu-dDi)/2-p.y)*s*0.7; break;
+                        case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(fAng)*dist-p.x)*s*0.5; p.vy += (this.y+Math.sin(fAng)*dist-p.y)*s*0.5; break;
+                        case 41: const mx0 = normX*2-0.5; const my0 = normY*1.5; let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi<20){ const xt=mx*mx-my*my+mx0; my=2*mx*my+my0; mx=xt; mi++; } if(mi<20){ p.vx += Math.cos(angle) * s * 8; p.vy += Math.sin(angle) * s * 8;} break;
+                        case 42: p.vx += (Math.floor(p.x/40)*40+20-p.x)*s*0.6; p.vy += (Math.floor(p.y/40)*40+20-p.y)*s*0.6; break;
+                        case 43: const hDiv = 1 << Math.round(dist*0.05%4+1); const hDir = (Math.floor(normX*hDiv/2+hDiv/2)+Math.floor(normY*hDiv/2+hDiv/2))%2==0?1:-1; p.vx += hDir*Math.sin(this.rotation)*s*5; p.vy += hDir*Math.cos(this.rotation)*s*5; break;
+                        case 44: const tAng = Math.atan2(p.y-height, p.x-width/2); p.vx += Math.cos(tAng)*s*4; p.vy += Math.sin(tAng)*s*4; break;
+                        case 45: const ix = Math.round((p.x-p.y)/1.73/30)*30*1.73; const iy = Math.round((p.x+p.y)/30)*30; p.vx += (ix+iy/2-p.x)*s*0.7; p.vy += (iy/2-p.y)*s*0.7; break;
+                        case 46: const yyA = (angle+Math.PI+this.rotation)%(Math.PI*2); const yyC = dist<hw/2?hw/4:3*hw/4; const yyT = yyA<Math.PI?0:Math.PI; p.vx += (Math.cos(yyT)*yyC-dx)*s*0.5; p.vy += (Math.sin(yyT)*yyC-dy)*s*0.5; break;
+                        case 47: if(Math.abs(angle-(this.rotation*2)%(Math.PI*2))<0.1 || Math.abs(angle-(this.rotation*2)%(Math.PI*2))>Math.PI*2-0.1){ p.vx += Math.cos(angle)*s*6; p.vy += Math.sin(angle)*s*6; } break;
+                        case 48: const cxS = Math.round(p.x/20)*20; const cyS = Math.round(p.y/20)*20; if(Math.abs(cxS-p.x)<Math.abs(cyS-p.y)) p.vx += (cxS-p.x)*s*0.9; else p.vy += (cyS-p.y)*s*0.9; break;
+                        case 49: if(p.x%45<5) p.vy += Math.sin(p.x*0.01)*s*4; if(p.y%45<5) p.vx += Math.cos(p.y*0.01)*s*4; break;
+                        case 50: const mPA = Math.round(angle*16/(Math.PI*2))*(Math.PI*2)/16+this.rotation; p.vx += (Math.cos(mPA)*dist-dx)*s*0.5; p.vy += (Math.sin(mPA)*dist-dy)*s*0.5; break;
+                        case 51: const aCo = dist*0.1+this.rotation*2; p.vx += (Math.cos(aCo)*dist-dx)*s*0.6; p.vy += (Math.sin(aCo)*dist-dy)*s*0.6; break;
+                        case 52: const sdTX = Math.floor(this.x/50)*50+Math.cos(this.id)*hw; const sdTY = Math.floor(this.y/50)*50+Math.sin(this.id)*hh; p.vx += (sdTX-p.x)*s*0.3; p.vy += (sdTY-p.y)*s*0.3; break;
+                        case 53: const wea = (Math.floor(p.x/25)+Math.floor(p.y/25))%2==0?1:-1; p.vx += wea*s*3; p.vy += -wea*s*3; break;
+                        case 54: const lFor = (p.luma / 255) * 6 * s; p.vx += Math.cos(angle) * (lFor - 3); p.vy += Math.sin(angle) * (lFor - 3); break;
+                        case 55: if (p.r > p.g && p.r > p.b) p.vx -= s * 5; else if (p.g > p.r && p.g > p.b) p.vy -= s * 5; else p.vx += s * 5; break;
+                        case 56: const satVal = Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b); const sAngV = (satVal/255)*Math.PI*2+this.rotation; p.vx += Math.cos(sAngV)*s*5; p.vy += Math.sin(sAngV)*s*5; break;
+                        case 57: const rbDV = p.r > p.b ? 1 : -1; p.vx += Math.cos(angle)*rbDV*s*6; p.vy += Math.sin(angle)*rbDV*s*6; break;
+                        case 58: if (p.g > 150) p.vx += Math.sin(p.y*0.1)*s*5; else p.vx -= Math.sin(p.y*0.1)*s*5; break;
+                        case 59: p.vx += (Math.round(p.x/40)*40-p.x)*(p.r/255)*s*0.8; break;
+                        case 60: if (p.r > 200) { p.vx += (this.x-p.x)*s*0.1; p.vy += (this.y-p.y)*s*0.1; } break;
+                        case 61: const hRiV = Math.floor(p.luma/50)%2==0?1:-1; p.vx += Math.cos(angle+1.57)*hRiV*s*5; p.vy += Math.sin(angle+1.57)*hRiV*s*5; break;
+                        case 62: p.vx += Math.cos(angle)*(1-p.luma/255)*s*7; p.vy += Math.sin(angle)*(1-p.luma/255)*s*7; break;
+                        case 63: const warmV = (p.r+p.g)/2 > p.b ? 1 : -1; p.vx += warmV*s*5; break;
+                        case 64: const lStep = height / 6; const lTargetY = Math.floor(p.luma / 42) * lStep + lStep/2; p.vy += (lTargetY - (p.y - this.y + height/2) % height) * s * 0.1; break;
+                        case 65: if(p.r > p.g && p.r > p.b) { p.vx += (-hw - dx)*s*0.2; p.vy += (-hh - dy)*s*0.2; } else if(p.g > p.r && p.g > p.b) { p.vx += (hw - dx)*s*0.2; p.vy += (-hh - dy)*s*0.2; } else if(p.b > p.r && p.b > p.g) { p.vx += (-hw - dx)*s*0.2; p.vy += (hh - dy)*s*0.2; } break;
+                        case 66: const sD = (Math.max(p.r,p.g,p.b) - Math.min(p.r,p.g,p.b)) > 100 ? 1 : -1; p.vx += Math.cos(angle) * sD * s * 6; p.vy += Math.sin(angle) * sD * s * 6; break;
+                        case 67: const hA = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(hA)*dist - dx) * s * 0.3; p.vy += (Math.sin(hA)*dist - dy) * s * 0.3; break;
+                        case 68: const spX = (p.phase / 360) * this.sizeW - hw; p.vx += (spX - dx) * s * 0.4; break;
+                        case 69: let pR = p.r > 200 ? 0.05 : (p.g > 200 ? -0.05 : 0.02); p.vx += Math.cos(angle + 1.57) * dist * pR * s; p.vy += Math.sin(angle + 1.57) * dist * pR * s; break;
+                        case 70: const iP = (p.luma / 255 > 0.5) ? -1 : 1; p.vx += Math.cos(angle) * iP * s * 5; p.vy += Math.sin(angle) * iP * s * 5; break;
+                        case 71: if(p.r < 100) p.vx -= s*5; else if(p.g < 100) p.vy -= s*5; else if(p.b < 100) p.vx += s*5; break;
+                        case 72: const cWa = Math.sin(dist * 0.1 - this.rotation * (p.luma/50)); p.vx += Math.cos(angle) * cWa * s * 4; p.vy += Math.sin(angle) * cWa * s * 4; break;
+                        case 73: const cgO = (p.phase / 360) * 20; const cgX = Math.round((p.x + cgO)/30)*30 - cgO; p.vx += (cgX - p.x) * s * 0.6; break;
+                    }
+                }
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+        }
+
+        function buildMenu() {
+            effectsGrid.innerHTML = '';
+            EFFECT_NAMES.forEach((name, idx) => {
+                const div = document.createElement('div');
+                div.className = 'effect-item';
+                div.innerHTML = `<input type="checkbox" ${enabledEffects[idx] ? 'checked' : ''} id="eff-${idx}"> <span class="effect-name">${name}</span>`;
+                div.addEventListener('click', (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                        const input = div.querySelector('input');
+                        input.checked = !input.checked;
+                        enabledEffects[idx] = input.checked;
+                    } else {
+                        enabledEffects[idx] = e.target.checked;
+                    }
+                });
+                effectsGrid.appendChild(div);
+            });
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particleCount = Math.floor(width * height * 0.10); 
+            initParticles();
+            cells = [];
+            for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
+        }
+
+        let lastTime = 0;
+        function loop(timestamp) {
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+            ctx.fillRect(0, 0, width, height);
+            cells.forEach(cell => cell.update(dt));
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                for (let j = 0; j < cells.length; j++) cells[j].applyForce(p);
+                p.update();
+                const px = (p.x | 0); const py = (p.y | 0);
+                
+                // Render as 2x2 grain block
+                if (px >= 0 && px < width - 1 && py >= 0 && py < height - 1) {
+                    // Current Row
+                    let idx = (py * width + px) * 4;
+                    data[idx] = p.r; data[idx + 1] = p.g; data[idx + 2] = p.b; data[idx + 3] = 255;
+                    idx = (py * width + (px + 1)) * 4;
+                    data[idx] = p.r; data[idx + 1] = p.g; data[idx + 2] = p.b; data[idx + 3] = 255;
+                    // Next Row
+                    idx = ((py + 1) * width + px) * 4;
+                    data[idx] = p.r; data[idx + 1] = p.g; data[idx + 2] = p.b; data[idx + 3] = 255;
+                    idx = ((py + 1) * width + (px + 1)) * 4;
+                    data[idx] = p.r; data[idx + 1] = p.g; data[idx + 2] = p.b; data[idx + 3] = 255;
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+            requestAnimationFrame(loop);
+        }
+
+        document.getElementById('btn-soft').addEventListener('click', (e) => {
+            config.hardEdges = false; e.target.classList.add('active');
+            document.getElementById('btn-hard').classList.remove('active');
+        });
+        document.getElementById('btn-hard').addEventListener('click', (e) => {
+            config.hardEdges = true; e.target.classList.add('active');
+            document.getElementById('btn-soft').classList.remove('active');
+        });
+
+        const paletteButtons = document.querySelectorAll('[data-palette]');
+        paletteButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                paletteButtons.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.palette = e.target.dataset.palette;
+                particles.forEach(p => p.assignColor());
+            });
+        });
+
+        canvas.addEventListener('click', () => {
+            menu.classList.add('active');
+            buildMenu();
+        });
+
+        document.getElementById('close-menu').addEventListener('click', () => {
+            menu.classList.remove('active');
+        });
+
+        document.getElementById('toggle-all').addEventListener('click', () => {
+            const targetState = !enabledEffects.some(e => e); 
+            enabledEffects.fill(targetState);
+            buildMenu();
+            initParticles(); 
+            cells.forEach(c => c.reset());
+        });
+
+        document.getElementById('randomise').addEventListener('click', () => {
+            enabledEffects.fill(false);
+            const indices = new Set();
+            const orgIndices = EFFECT_NAMES.map((n, i) => n.includes('[O]') ? i : -1).filter(i => i !== -1);
+            const dynIndices = EFFECT_NAMES.map((n, i) => !n.includes('[O]') && !n.includes('[C]') ? i : -1).filter(i => i !== -1);
+            const colIndices = EFFECT_NAMES.map((n, i) => n.includes('[C]') ? i : -1).filter(i => i !== -1);
+            
+            indices.add(colIndices[Math.floor(Math.random() * colIndices.length)]);
+            const numOrg = Math.random() < 0.5 ? 3 : 4;
+            const shuffledOrg = orgIndices.sort(() => 0.5 - Math.random());
+            for(let i = 0; i < numOrg; i++) indices.add(shuffledOrg[i]);
+            const poolDyn = dynIndices.sort(() => 0.5 - Math.random());
+            let dIdx = 0;
+            while(indices.size < 8 && dIdx < poolDyn.length) indices.add(poolDyn[dIdx++]);
+            
+            indices.forEach(idx => enabledEffects[idx] = true);
+
+            const palKeys = Object.keys(PALETTES);
+            palKeys.push('cycle');
+            const randomPal = palKeys[Math.floor(Math.random() * palKeys.length)];
+            config.palette = randomPal;
+            paletteButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.palette === randomPal));
+
+            buildMenu();
+            initParticles(); 
+            cells.forEach(c => c.reset());
+        });
+
+        window.addEventListener('resize', resize);
+        resize();
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
