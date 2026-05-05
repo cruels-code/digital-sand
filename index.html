@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL SAND ART - V3.8</title>
+    <title>Digital Sand - V4.3</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400&display=swap');
 
@@ -95,7 +95,7 @@
             padding: 8px 16px;
             cursor: pointer;
             font-family: 'Fira Code', monospace;
-            font-size: 12px;
+            font-size: 11px;
             transition: all 0.1s;
             text-transform: uppercase;
         }
@@ -139,7 +139,7 @@
         }
         .palette-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 8px;
             width: 100%;
         }
@@ -153,7 +153,7 @@
 
     <div id="menu-overlay">
         <div class="terminal-header">
-            <h2>> SYSTEM.CORE.ALGORITHMS</h2>
+            <h2>> SYSTEM.CORE.ALGORITHMS.V4.3</h2>
             <p>Force Field Configuration and Particle Dynamics Registry</p>
         </div>
 
@@ -161,34 +161,14 @@
             <div class="setting-group">
                 <span class="setting-label">FORCE_EDGE_MODEL</span>
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn active" id="btn-soft">[ SOFT ]</button>
-                    <button class="btn" id="btn-hard">[ HARD ]</button>
+                    <button class="btn active" id="btn-soft">[ SOFT_FALLOFF ]</button>
+                    <button class="btn" id="btn-hard">[ HARD_BOX ]</button>
                 </div>
             </div>
             <div class="setting-group">
                 <span class="setting-label">COLOR_MAP_SELECTION (8-BIT_PRECISION)</span>
-                <div class="palette-container">
-                    <button class="btn active" data-palette="cycle" id="pal-cycle">[ CHROMA_CYCLE ]</button>
-                    <button class="btn" data-palette="spectrum">Spectrum</button>
-                    <button class="btn" data-palette="neon">Neon</button>
-                    <button class="btn" data-palette="sunset">Solar</button>
-                    <button class="btn" data-palette="deepsea">Deepsea</button>
-                    <button class="btn" data-palette="sand">Sand</button>
-                    <button class="btn" data-palette="matrix">Matrix</button>
-                    <button class="btn" data-palette="cyber">Cyberpunk</button>
-                    <button class="btn" data-palette="magma">Magma</button>
-                    <button class="btn" data-palette="frost">Frost</button>
-                    <button class="btn" data-palette="forest">Forest</button>
-                    <button class="btn" data-palette="vapor">Vaporwave</button>
-                    <button class="btn" data-palette="royal">Royal</button>
-                    <button class="btn" data-palette="autumn">Autumn</button>
-                    <button class="btn" data-palette="toxic">Toxic</button>
-                    <button class="btn" data-palette="berry">Berry</button>
-                    <button class="btn" data-palette="midnight">Midnight</button>
-                    <button class="btn" data-palette="coral">Coral</button>
-                    <button class="btn" data-palette="synth">Synthwave</button>
-                    <button class="btn" data-palette="pastel">V-Pastel</button>
-                    <button class="btn" data-palette="monogold">Gold_Ref</button>
+                <div class="palette-container" id="palette-list">
+                    <!-- Palettes generated dynamically -->
                 </div>
             </div>
         </div>
@@ -210,26 +190,53 @@
         let width, height;
         let particles = [];
         let cells = [];
-        
         let particleCount = 0; 
         const CELL_COUNT = 5; 
         const FRICTION = 0.94; 
         const SPEED_SCALE = 0.5;
+        const MAX_PARTICLES = 120000; // SAFETY CAP to prevent browser freeze
 
         const config = {
             hardEdges: false,
-            palette: 'cycle' 
+            palette: 'cycle_rainbow', 
+            grainSize: 2 
         };
 
-        const SPECTRUM_LUT = [];
-        for (let i = 0; i < 360; i++) {
-            const r = Math.round(255 * Math.max(0, Math.min(1, Math.abs((i + 360) % 360 / 60 - 3) - 1)));
-            const g = Math.round(255 * Math.max(0, Math.min(1, 2 - Math.abs((i + 240) % 360 / 60 - 3))));
-            const b = Math.round(255 * Math.max(0, Math.min(1, 2 - Math.abs((i + 120) % 360 / 60 - 3))));
-            SPECTRUM_LUT.push({r, g, b});
+        function lerpColor(c1, c2, t) {
+            return {
+                r: Math.round(c1.r + (c2.r - c1.r) * t),
+                g: Math.round(c1.g + (c2.g - c1.g) * t),
+                b: Math.round(c1.b + (c2.b - c1.b) * t)
+            };
         }
+
+        function generateCyclicLUT(stops) {
+            const lut = [];
+            const steps = 360;
+            for (let i = 0; i < steps; i++) {
+                const t = (i / steps) * stops.length;
+                const idx1 = Math.floor(t) % stops.length;
+                const idx2 = (idx1 + 1) % stops.length;
+                lut.push(lerpColor(stops[idx1], stops[idx2], t % 1));
+            }
+            return lut;
+        }
+
+        const CYCLIC_PALETTES = {
+            cycle_rainbow: generateCyclicLUT([{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}]),
+            cycle_toxic: generateCyclicLUT([{r:173,g:255,b:47},{r:255,g:255,b:0},{r:50,g:205,b:50}]),
+            cycle_abyss: generateCyclicLUT([{r:0,g:10,b:30},{r:0,g:255,b:255},{r:0,g:100,b:150}]),
+            cycle_glitch: generateCyclicLUT([{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:255}]),
+            cycle_forest: generateCyclicLUT([{r:0,g:40,b:10},{r:34,g:139,b:34},{r:107,g:142,b:35}]),
+            cycle_volcano: generateCyclicLUT([{r:40,g:0,b:0},{r:255,g:69,b:0},{r:255,g:215,b:0}]),
+            cycle_nebula: generateCyclicLUT([{r:75,g:0,b:130},{r:199,g:21,b:133},{r:0,g:0,b:139}]),
+            cycle_gold: generateCyclicLUT([{r:101,g:67,b:33},{r:255,g:215,b:0},{r:255,g:255,b:200}]),
+            cycle_ghost: generateCyclicLUT([{r:255,g:255,b:255},{r:176,g:196,b:222},{r:72,g:61,b:139}]),
+            cycle_plasma: generateCyclicLUT([{r:148,g:0,b:211},{r:75,g:0,b:130},{r:255,g:0,b:255}]),
+            cycle_seafoam: generateCyclicLUT([{r:64,g:224,b:208},{r:127,g:255,b:212},{r:0,g:128,b:128}])
+        };
         
-        const PALETTES = {
+        const STATIC_PALETTES = {
             spectrum: [{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}],
             neon: [{r:255,g:0,b:128},{r:0,g:255,b:255},{r:128,g:0,b:255},{r:255,g:255,b:255}],
             sunset: [{r:255,g:50,b:0},{r:255,g:200,b:0},{r:100,g:0,b:150},{r:255,g:255,b:200}],
@@ -273,14 +280,6 @@
 
         let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
 
-        function lerpColor(c1, c2, t) {
-            return {
-                r: Math.round(c1.r + (c2.r - c1.r) * t),
-                g: Math.round(c1.g + (c2.g - c1.g) * t),
-                b: Math.round(c1.b + (c2.b - c1.b) * t)
-            };
-        }
-
         class Particle {
             constructor() { this.init(); }
             init() {
@@ -291,12 +290,12 @@
                 this.assignColor();
             }
             assignColor() {
-                if (config.palette === 'cycle') {
-                    const c = SPECTRUM_LUT[this.phase];
+                if (CYCLIC_PALETTES[config.palette]) {
+                    const c = CYCLIC_PALETTES[config.palette][this.phase];
                     this.r = c.r; this.g = c.g; this.b = c.b;
                 } else {
-                    const palette = PALETTES[config.palette];
-                    const t = (this.x / width + this.y / height) / 2;
+                    const palette = STATIC_PALETTES[config.palette] || STATIC_PALETTES['spectrum'];
+                    const t = Math.max(0, Math.min(1, (this.x / width + this.y / height) / 2));
                     const scaledT = t * (palette.length - 1);
                     const i = Math.floor(scaledT);
                     const f = scaledT - i;
@@ -311,9 +310,9 @@
                 this.y += this.vy * SPEED_SCALE;
                 this.vx *= FRICTION;
                 this.vy *= FRICTION;
-                if (config.palette === 'cycle') {
+                if (CYCLIC_PALETTES[config.palette]) {
                     this.phase = (this.phase + 1) % 360;
-                    const c = SPECTRUM_LUT[this.phase];
+                    const c = CYCLIC_PALETTES[config.palette][this.phase];
                     this.r = c.r; this.g = c.g; this.b = c.b;
                     this.luma = (this.r + this.g + this.b) / 3;
                 }
@@ -335,7 +334,6 @@
                 const scale = 0.26 + Math.random() * 0.26;
                 this.sizeW = canvasMin * scale;
                 this.sizeH = canvasMin * scale;
-                
                 const validIndices = enabledEffects.map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
                 this.effectIndex = validIndices.length > 0 ? validIndices[Math.floor(Math.random() * validIndices.length)] : 0;
                 this.timer = 0;
@@ -369,7 +367,9 @@
                 const hw = this.sizeW / 2; const hh = this.sizeH / 2;
                 if (Math.abs(dx) < hw && Math.abs(dy) < hh) {
                     const normX = dx / hw; const normY = dy / hh;
-                    const edgeForce = config.hardEdges ? 1 : (1 - Math.max(Math.abs(normX), Math.abs(normY)));
+                    const t = Math.max(Math.abs(normX), Math.abs(normY));
+                    const inverseT = Math.max(0, 1 - t);
+                    const edgeForce = config.hardEdges ? (inverseT > 0.01 ? 1 : 0) : (inverseT * inverseT * (3 - 2 * inverseT));
                     const s = this.strength * edgeForce;
                     const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
                     switch(this.effectIndex) {
@@ -414,7 +414,10 @@
                         case 38: const cbK = (Math.floor(p.x/30)+Math.floor(p.y/30))%2==0?1:-1; p.vx += cbK*s*3; break;
                         case 39: const dSu = Math.round((p.x+p.y)/25)*25; const dDi = Math.round((p.x-p.y)/25)*25; p.vx += ((dSu+dDi)/2-p.x)*s*0.7; p.vy += ((dSu-dDi)/2-p.y)*s*0.7; break;
                         case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(fAng)*dist-p.x)*s*0.5; p.vy += (this.y+Math.sin(fAng)*dist-p.y)*s*0.5; break;
-                        case 41: const mx0 = normX*2-0.5; const my0 = normY*1.5; let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi<20){ const xt=mx*mx-my*my+mx0; my=2*mx*my+my0; mx=xt; mi++; } if(mi<20){ p.vx += Math.cos(angle) * s * 8; p.vy += Math.sin(angle) * s * 8;} break;
+                        case 41: // Simplified Mandelbrot Boundary
+                            const mx0 = normX * 1.5 - 0.5; const my0 = normY * 1.5;
+                            let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+mx0; my=2*mx*my+my0; mx=xt; mi++; } 
+                            if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
                         case 42: p.vx += (Math.floor(p.x/40)*40+20-p.x)*s*0.6; p.vy += (Math.floor(p.y/40)*40+20-p.y)*s*0.6; break;
                         case 43: const hDiv = 1 << Math.round(dist*0.05%4+1); const hDir = (Math.floor(normX*hDiv/2+hDiv/2)+Math.floor(normY*hDiv/2+hDiv/2))%2==0?1:-1; p.vx += hDir*Math.sin(this.rotation)*s*5; p.vy += hDir*Math.cos(this.rotation)*s*5; break;
                         case 44: const tAng = Math.atan2(p.y-height, p.x-width/2); p.vx += Math.cos(tAng)*s*4; p.vy += Math.sin(tAng)*s*4; break;
@@ -474,12 +477,41 @@
                 });
                 effectsGrid.appendChild(div);
             });
+
+            const pList = document.getElementById('palette-list');
+            pList.innerHTML = '';
+            Object.keys(CYCLIC_PALETTES).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = 'btn' + (config.palette === key ? ' active' : '');
+                btn.dataset.palette = key;
+                btn.innerText = `[ ${key.split('_')[1].toUpperCase()}_CYCLE ]`;
+                btn.onclick = (e) => selectPalette(e, key);
+                pList.appendChild(btn);
+            });
+            Object.keys(STATIC_PALETTES).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = 'btn' + (config.palette === key ? ' active' : '');
+                btn.dataset.palette = key;
+                btn.innerText = key.charAt(0).toUpperCase() + key.slice(1);
+                btn.onclick = (e) => selectPalette(e, key);
+                pList.appendChild(btn);
+            });
+        }
+
+        function selectPalette(e, key) {
+            document.querySelectorAll('[data-palette]').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            config.palette = key;
+            particles.forEach(p => p.assignColor());
         }
 
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            particleCount = Math.floor(width * height * 0.10); 
+            let coverageRatio = 0.10;
+            if (config.grainSize === 2) coverageRatio = 0.15;
+            else if (config.grainSize === 4) coverageRatio = 0.20;
+            particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
             initParticles();
             cells = [];
             for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
@@ -494,28 +526,33 @@
             cells.forEach(cell => cell.update(dt));
             const imageData = ctx.getImageData(0, 0, width, height);
             const data = imageData.data;
+            const gs = config.grainSize;
+
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
                 for (let j = 0; j < cells.length; j++) cells[j].applyForce(p);
                 p.update();
-                const px = (p.x | 0); const py = (p.y | 0);
-                
-                // Render as 2x2 grain block
-                if (px >= 0 && px < width - 1 && py >= 0 && py < height - 1) {
-                    // Current Row
-                    let idx = (py * width + px) * 4;
-                    data[idx] = p.r; data[idx + 1] = p.g; data[idx + 2] = p.b; data[idx + 3] = 255;
-                    idx = (py * width + (px + 1)) * 4;
-                    data[idx] = p.r; data[idx + 1] = p.g; data[idx + 2] = p.b; data[idx + 3] = 255;
-                    // Next Row
-                    idx = ((py + 1) * width + px) * 4;
-                    data[idx] = p.r; data[idx + 1] = p.g; data[idx + 2] = p.b; data[idx + 3] = 255;
-                    idx = ((py + 1) * width + (px + 1)) * 4;
-                    data[idx] = p.r; data[idx + 1] = p.g; data[idx + 2] = p.b; data[idx + 3] = 255;
+                const px = Math.floor(p.x); const py = Math.floor(p.y);
+                for (let gy = 0; gy < gs; gy++) {
+                    for (let gx = 0; gx < gs; gx++) {
+                        const curX = px + gx; const curY = py + gy;
+                        if (curX >= 0 && curX < width && curY >= 0 && curY < height) {
+                            const idx = (curY * width + curX) * 4;
+                            data[idx] = p.r; data[idx+1] = p.g; data[idx+2] = p.b; data[idx+3] = 255;
+                        }
+                    }
                 }
             }
             ctx.putImageData(imageData, 0, 0);
             requestAnimationFrame(loop);
+        }
+
+        function fisherYates(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
         }
 
         document.getElementById('btn-soft').addEventListener('click', (e) => {
@@ -527,59 +564,38 @@
             document.getElementById('btn-soft').classList.remove('active');
         });
 
-        const paletteButtons = document.querySelectorAll('[data-palette]');
-        paletteButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                paletteButtons.forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                config.palette = e.target.dataset.palette;
-                particles.forEach(p => p.assignColor());
-            });
-        });
-
-        canvas.addEventListener('click', () => {
-            menu.classList.add('active');
-            buildMenu();
-        });
-
-        document.getElementById('close-menu').addEventListener('click', () => {
-            menu.classList.remove('active');
-        });
-
+        canvas.addEventListener('click', () => { menu.classList.add('active'); buildMenu(); });
+        document.getElementById('close-menu').addEventListener('click', () => { menu.classList.remove('active'); });
         document.getElementById('toggle-all').addEventListener('click', () => {
             const targetState = !enabledEffects.some(e => e); 
-            enabledEffects.fill(targetState);
-            buildMenu();
-            initParticles(); 
-            cells.forEach(c => c.reset());
+            enabledEffects.fill(targetState); buildMenu(); initParticles(); cells.forEach(c => c.reset());
         });
 
         document.getElementById('randomise').addEventListener('click', () => {
             enabledEffects.fill(false);
-            const indices = new Set();
             const orgIndices = EFFECT_NAMES.map((n, i) => n.includes('[O]') ? i : -1).filter(i => i !== -1);
             const dynIndices = EFFECT_NAMES.map((n, i) => !n.includes('[O]') && !n.includes('[C]') ? i : -1).filter(i => i !== -1);
             const colIndices = EFFECT_NAMES.map((n, i) => n.includes('[C]') ? i : -1).filter(i => i !== -1);
             
+            const indices = new Set();
             indices.add(colIndices[Math.floor(Math.random() * colIndices.length)]);
             const numOrg = Math.random() < 0.5 ? 3 : 4;
-            const shuffledOrg = orgIndices.sort(() => 0.5 - Math.random());
-            for(let i = 0; i < numOrg; i++) indices.add(shuffledOrg[i]);
-            const poolDyn = dynIndices.sort(() => 0.5 - Math.random());
-            let dIdx = 0;
-            while(indices.size < 8 && dIdx < poolDyn.length) indices.add(poolDyn[dIdx++]);
-            
+            fisherYates(orgIndices);
+            for(let i = 0; i < numOrg; i++) indices.add(orgIndices[i]);
+            fisherYates(dynIndices);
+            let dIdx = 0; while(indices.size < 8 && dIdx < dynIndices.length) indices.add(dynIndices[dIdx++]);
             indices.forEach(idx => enabledEffects[idx] = true);
 
-            const palKeys = Object.keys(PALETTES);
-            palKeys.push('cycle');
-            const randomPal = palKeys[Math.floor(Math.random() * palKeys.length)];
-            config.palette = randomPal;
-            paletteButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.palette === randomPal));
+            if (Math.random() < 0.05) {
+                const keys = Object.keys(CYCLIC_PALETTES);
+                config.palette = keys[Math.floor(Math.random() * keys.length)];
+            } else {
+                const keys = Object.keys(STATIC_PALETTES);
+                config.palette = keys[Math.floor(Math.random() * keys.length)];
+            }
 
-            buildMenu();
-            initParticles(); 
-            cells.forEach(c => c.reset());
+            config.grainSize = [1, 2, 4][Math.floor(Math.random() * 3)];
+            resize(); buildMenu();
         });
 
         window.addEventListener('resize', resize);
