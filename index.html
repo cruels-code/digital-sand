@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL SAND ART - V4.6.1</title>
+    <title>TERMINAL SAND ART - V4.6.2</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -198,7 +198,7 @@
 
     <div id="menu-overlay">
         <div class="terminal-header">
-            <h2>V4.6.1</h2>
+            <h2>V4.6.2</h2>
         </div>
 
         <div class="settings-panel">
@@ -218,7 +218,7 @@
                 </div>
             </div>
             <div class="setting-group">
-                <span class="setting-label">COLOR_REGISTRY (5-COL_GRID)</span>
+                <span class="setting-label">COLOR_MAP (5-COL_GRID)</span>
                 <div class="palette-container" id="palette-list"></div>
             </div>
         </div>
@@ -251,6 +251,9 @@
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // Timing Control - Declared at top to prevent ReferenceErrors
+        let lastFrameTime = performance.now();
 
         // Protected variables for external hosting
         const hasFirebase = typeof __firebase_config !== 'undefined';
@@ -311,19 +314,19 @@
         let config = {
             hardEdges: false,
             velocityLuma: false,
-            palette: 'cycle_rainbow', // Default as requested
+            palette: 'cycle_rainbow', 
             grainSize: 1 
         };
 
         let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
         
-        // CALIBRATED DEFAULT STRENGTHS (Matching Screenshots provided)
+        // CALIBRATED DEFAULT STRENGTHS (Matching Screenshots precisely)
         let effectStrengths = [
-            100, 25, 200, 200, 200, // 0-4
+            100, 28, 200, 200, 200, // 0-4
             200, 200, 7, 100, 100,  // 5-9
             100, 100, 100, 100, 100, // 10-14
             100, 200, 5, 200, 200,  // 15-19
-            5, 9, 23, 24, 56,       // 20-24
+            8, 9, 23, 24, 56,       // 20-24
             123, 164, 200, 51, 200, // 25-29
             200, 200, 200, 200, 100, // 30-34
             200, 200, 5, 100, 200,  // 35-39
@@ -337,16 +340,15 @@
 
         async function saveState() {
             const data = { config, enabledEffects, effectStrengths, timestamp: Date.now() };
-            localStorage.setItem('sand_art_state', JSON.stringify(data));
+            try { localStorage.setItem('sand_art_state', JSON.stringify(data)); } catch(e) {}
             if (db && user) {
                 try {
                     const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
                     await setDoc(stateRef, data);
-                } catch (err) { console.warn("Cloud save bypassed."); }
+                } catch (err) { console.warn("Cloud sync disabled."); }
             }
             const ind = document.getElementById('save-indicator');
-            ind.style.opacity = 1;
-            setTimeout(() => ind.style.opacity = 0, 2000);
+            if (ind) { ind.style.opacity = 1; setTimeout(() => ind.style.opacity = 0, 2000); }
         }
 
         async function loadState() {
@@ -359,8 +361,10 @@
                 } catch(e) {}
             }
             if (!data) {
-                const local = localStorage.getItem('sand_art_state');
-                if (local) data = JSON.parse(local);
+                try {
+                    const local = localStorage.getItem('sand_art_state');
+                    if (local) data = JSON.parse(local);
+                } catch(e) {}
             }
             if (data) {
                 Object.assign(config, data.config);
@@ -374,7 +378,7 @@
             buildMenu();
         }
 
-        if (!hasFirebase) { setTimeout(loadState, 100); }
+        if (!hasFirebase) { setTimeout(loadState, 50); }
 
         function lerpColor(c1, c2, t) {
             return {
@@ -451,7 +455,8 @@
                     if (c) { this.r = c.r; this.g = c.g; this.b = c.b; }
                 } else {
                     const palette = STATIC_PALETTES[config.palette] || STATIC_PALETTES['spectrum'];
-                    const t = Math.max(0, Math.min(1, (this.x / (width || 1) + this.y / (height || 1)) / 2));
+                    const safeW = (width || 1); const safeH = (height || 1);
+                    const t = Math.max(0, Math.min(1, (this.x / safeW + this.y / safeH) / 2));
                     const scaledT = t * (palette.length - 1);
                     const i = Math.floor(scaledT);
                     const f = scaledT - i;
@@ -672,30 +677,41 @@
             width = canvas.width = Math.floor(window.innerWidth);
             height = canvas.height = Math.floor(window.innerHeight);
             if (width === 0 || height === 0) return;
+            
             let coverageRatio = config.grainSize === 2 ? 0.15 : (config.grainSize === 3 ? 0.20 : 0.10);
             particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
+            
             if (particles.length > particleCount) particles.length = particleCount;
             else while (particles.length < particleCount) particles.push(new Particle());
+            
             cells = [];
             for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
         }
 
         function loop(timestamp) {
             if (width <= 0 || height <= 0) return requestAnimationFrame(loop);
+            
+            // Safety initialization for frame time
+            if (!lastFrameTime) lastFrameTime = timestamp;
             const dt = Math.min(2.0, (timestamp - lastFrameTime) / 16.66); 
             lastFrameTime = timestamp;
+
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
             ctx.fillRect(0, 0, width, height);
             cells.forEach(cell => cell.update(dt));
+            
             const imageData = ctx.getImageData(0, 0, width, height);
             const data = imageData.data;
             const gs = config.grainSize;
+
             for (let i = 0; i < particles.length; i++) {
                 const p = particles[i];
                 for (let j = 0; j < cells.length; j++) cells[j].applyForce(p, dt);
                 p.update(dt);
+                
                 let lumaFactor = config.velocityLuma ? Math.min(1.0, Math.sqrt(p.vx * p.vx + p.vy * p.vy) / 12.0) : 1.0;
                 const px = Math.floor(p.x); const py = Math.floor(p.y);
+                
                 for (let gy = 0; gy < gs; gy++) {
                     const py_off = py + gy;
                     if (py_off < 0 || py_off >= height) continue;
@@ -714,6 +730,7 @@
         document.getElementById('btn-soft').onclick = () => { config.hardEdges = false; document.getElementById('btn-soft').classList.add('active'); document.getElementById('btn-hard').classList.remove('active'); saveState(); };
         document.getElementById('btn-hard').onclick = () => { config.hardEdges = true; document.getElementById('btn-hard').classList.add('active'); document.getElementById('btn-soft').classList.remove('active'); saveState(); };
         document.getElementById('btn-velocity-luma').onclick = (e) => { config.velocityLuma = !config.velocityLuma; e.target.classList.toggle('active', config.velocityLuma); saveState(); };
+        
         canvas.onclick = (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } };
         document.getElementById('close-menu').onclick = () => menu.classList.remove('active');
         document.getElementById('toggle-all').onclick = () => {
@@ -732,8 +749,10 @@
             shuf(org); for(let i=0; i<nOrg; i++) sel.add(org[i]);
             shuf(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
             sel.forEach(idx => enabledEffects[idx] = true);
+
             if (Math.random() < 0.05) config.palette = Object.keys(CYCLIC_PALETTES)[Math.floor(Math.random() * Object.keys(CYCLIC_PALETTES).length)];
             else config.palette = Object.keys(STATIC_PALETTES)[Math.floor(Math.random() * Object.keys(STATIC_PALETTES).length)];
+            
             config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
             resize(); 
             particles.forEach(p => p.assignColor());
