@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL SAND ART - V4.5.9</title>
+    <title>TERMINAL SAND ART - V4.6.0</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -43,43 +43,43 @@
         .terminal-header {
             width: 100%;
             max-width: 900px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-bottom: 1px solid #333;
             padding-bottom: 5px;
             text-align: left;
         }
         .terminal-header h2 {
             margin: 0;
-            font-size: 14px;
-            opacity: 0.8;
+            font-size: 12px;
+            opacity: 0.6;
             letter-spacing: 1px;
         }
         .settings-panel {
             background: #050505;
-            padding: 15px;
+            padding: 12px;
             border: 1px solid #222;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             width: 100%;
             max-width: 900px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
         .setting-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
         .setting-label {
-            font-size: 9px;
+            font-size: 8px;
             color: #00ff00;
-            opacity: 0.6;
+            opacity: 0.5;
             text-transform: uppercase;
         }
         .controls {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 15px;
             width: 100%;
             max-width: 900px;
         }
@@ -87,38 +87,31 @@
             background: transparent;
             border: 1px solid #00ff00;
             color: #00ff00;
-            padding: 6px 12px;
+            padding: 5px 10px;
             cursor: pointer;
             font-family: 'Pixelify Sans', sans-serif;
-            font-size: 10px;
+            font-size: 9px;
             transition: all 0.1s;
             text-transform: uppercase;
         }
-        .btn:hover {
-            background: #00ff00;
-            color: #000;
-        }
-        .btn.active {
-            background: #00ff00;
-            color: #000;
-        }
+        .btn:hover { background: #00ff00; color: #000; }
+        .btn.active { background: #00ff00; color: #000; }
         
         details {
             width: 100%;
             max-width: 900px;
-            border: 1px solid #222;
-            margin-bottom: 5px;
+            border: 1px solid #1a1a1a;
+            margin-bottom: 4px;
             background: #080808;
         }
         summary {
-            padding: 10px;
+            padding: 8px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10px;
             list-style: none;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid transparent;
         }
         details[open] summary {
             border-bottom: 1px solid #222;
@@ -126,18 +119,18 @@
         }
         .effect-category-content {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 10px;
-            padding: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 8px;
+            padding: 10px;
         }
 
         .effect-item-wrapper {
             background: #0c0c0c;
             border: 1px solid #1a1a1a;
-            padding: 10px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
         .effect-row-top {
             display: flex;
@@ -145,27 +138,27 @@
             justify-content: space-between;
             gap: 10px;
         }
-        .effect-name { font-size: 10px; color: #666; }
+        .effect-name { font-size: 9px; color: #444; }
         .active-text { color: #00ff00 !important; }
 
         input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
-            height: 4px;
+            height: 3px;
             background: #1a1a1a;
             outline: none;
             cursor: pointer;
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             background: #00ff00;
             border: 1px solid #000;
         }
         .strength-label {
-            font-size: 9px;
-            color: #444;
+            font-size: 8px;
+            color: #333;
             display: flex;
             justify-content: space-between;
         }
@@ -173,12 +166,12 @@
         .palette-container {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 5px;
+            gap: 4px;
             width: 100%;
         }
         .palette-container .btn {
-            font-size: 8.5px;
-            padding: 4px 2px;
+            font-size: 8px;
+            padding: 3px 1px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -188,44 +181,44 @@
             position: fixed;
             bottom: 10px;
             right: 10px;
-            font-size: 9px;
+            font-size: 8px;
             opacity: 0;
             transition: opacity 0.5s;
             pointer-events: none;
         }
 
-        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: #222; }
     </style>
 </head>
 <body>
 
     <canvas id="canvas"></canvas>
-    <div id="save-indicator">>> DATA_SYNCED</div>
+    <div id="save-indicator">>> CACHE_UPDATED</div>
 
     <div id="menu-overlay">
         <div class="terminal-header">
-            <h2>V4.5.9</h2>
+            <h2>V4.6.0</h2>
         </div>
 
         <div class="settings-panel">
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 <div class="setting-group">
-                    <span class="setting-label">EDGE_DYNAMICS</span>
+                    <span class="setting-label">FIELD_FALLOFF</span>
                     <div style="display: flex; gap: 5px;">
                         <button class="btn active" id="btn-soft">[ SOFT ]</button>
                         <button class="btn" id="btn-hard">[ HARD ]</button>
                     </div>
                 </div>
                 <div class="setting-group">
-                    <span class="setting-label">LUMA_MAP</span>
+                    <span class="setting-label">BRIGHTNESS</span>
                     <div style="display: flex; gap: 5px;">
-                        <button class="btn" id="btn-velocity-luma">[ VELOCITY ]</button>
+                        <button class="btn" id="btn-velocity-luma">[ VELOCITY_MAP ]</button>
                     </div>
                 </div>
             </div>
             <div class="setting-group">
-                <span class="setting-label">COLOR_REGISTRY (5-WIDE)</span>
+                <span class="setting-label">COLOR_MAP (5-COL_GRID)</span>
                 <div class="palette-container" id="palette-list"></div>
             </div>
         </div>
@@ -237,21 +230,21 @@
         </div>
         
         <details open>
-            <summary><span>[ ORGANIC_STRUCTURES ]</span><span>+</span></summary>
+            <summary><span>[ ORGANIC ]</span><span>+</span></summary>
             <div class="effect-category-content" id="cat-organic"></div>
         </details>
 
         <details open>
-            <summary><span>[ FLUID_DYNAMICS ]</span><span>+</span></summary>
+            <summary><span>[ FLUID ]</span><span>+</span></summary>
             <div class="effect-category-content" id="cat-fluid"></div>
         </details>
 
         <details open>
-            <summary><span>[ CHROMA_OPERATORS ]</span><span>+</span></summary>
+            <summary><span>[ CHROMA ]</span><span>+</span></summary>
             <div class="effect-category-content" id="cat-chroma"></div>
         </details>
         
-        <div style="height: 100px;"></div>
+        <div style="height: 60px;"></div>
     </div>
 
     <script type="module">
@@ -259,34 +252,28 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        // SAFETY CHECK: Only attempt to initialize Firebase if the environment provides a config.
-        // This prevents the "Uncaught ReferenceError: __firebase_config is not defined" error on GitHub Pages.
-        const hasConfig = typeof __firebase_config !== 'undefined';
-        const firebaseConfig = hasConfig ? JSON.parse(__firebase_config) : null;
+        // Protected variables for external hosting
+        const hasFirebase = typeof __firebase_config !== 'undefined';
+        const firebaseConfig = hasFirebase ? JSON.parse(__firebase_config) : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'standalone-sand-art';
 
         let db = null;
         let auth = null;
         let user = null;
 
-        if (hasConfig) {
+        if (hasFirebase) {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-
             const initAuth = async () => {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (token) await signInWithCustomToken(auth, token);
+                else await signInAnonymously(auth);
             };
-
             onAuthStateChanged(auth, (u) => {
                 user = u;
                 if (user) loadState();
             });
-
             initAuth();
         }
 
@@ -332,46 +319,57 @@
         let effectStrengths = new Array(EFFECT_NAMES.length).fill(100);
 
         async function saveState() {
-            if (!db || !user) return;
-            try {
-                const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
-                await setDoc(stateRef, {
-                    config,
-                    enabledEffects,
-                    effectStrengths,
-                    timestamp: Date.now()
-                });
-                const ind = document.getElementById('save-indicator');
-                ind.style.opacity = 1;
-                setTimeout(() => ind.style.opacity = 0, 2000);
-            } catch (err) { console.error("Save failed", err); }
+            const data = { config, enabledEffects, effectStrengths, timestamp: Date.now() };
+            // 1. Save to LocalStorage for GitHub Pages / Browser Cache
+            localStorage.setItem('sand_art_state', JSON.stringify(data));
+            
+            // 2. Save to Cloud if available
+            if (db && user) {
+                try {
+                    const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
+                    await setDoc(stateRef, data);
+                } catch (err) { console.warn("Cloud save failed."); }
+            }
+
+            const ind = document.getElementById('save-indicator');
+            ind.style.opacity = 1;
+            setTimeout(() => ind.style.opacity = 0, 2000);
         }
 
         async function loadState() {
-            if (!db || !user) return;
-            try {
-                const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
-                const snap = await getDoc(stateRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    Object.assign(config, data.config);
-                    enabledEffects = data.enabledEffects;
-                    effectStrengths = data.effectStrengths;
-                    document.getElementById('btn-soft').classList.toggle('active', !config.hardEdges);
-                    document.getElementById('btn-hard').classList.toggle('active', config.hardEdges);
-                    document.getElementById('btn-velocity-luma').classList.toggle('active', config.velocityLuma);
-                    resize();
-                    buildMenu();
-                } else {
-                    resize();
-                    buildMenu();
-                }
-            } catch(e) {
-                console.warn("Persistence not available, using local defaults.");
-                resize();
-                buildMenu();
+            let data = null;
+
+            // 1. Try Cloud
+            if (db && user) {
+                try {
+                    const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
+                    const snap = await getDoc(stateRef);
+                    if (snap.exists()) data = snap.data();
+                } catch(e) {}
             }
+
+            // 2. Fallback to LocalStorage
+            if (!data) {
+                const local = localStorage.getItem('sand_art_state');
+                if (local) data = JSON.parse(local);
+            }
+
+            if (data) {
+                Object.assign(config, data.config);
+                if (data.enabledEffects) enabledEffects = data.enabledEffects;
+                if (data.effectStrengths) effectStrengths = data.effectStrengths;
+            }
+
+            // Rebuild UI based on loaded state
+            document.getElementById('btn-soft').classList.toggle('active', !config.hardEdges);
+            document.getElementById('btn-hard').classList.toggle('active', config.hardEdges);
+            document.getElementById('btn-velocity-luma').classList.toggle('active', config.velocityLuma);
+            resize();
+            buildMenu();
         }
+
+        // Logic check: ensure local load if Cloud auth never happens
+        if (!hasFirebase) { setTimeout(loadState, 100); }
 
         let lastFrameTime = performance.now();
 
@@ -722,7 +720,6 @@
         document.getElementById('btn-soft').onclick = () => { config.hardEdges = false; document.getElementById('btn-soft').classList.add('active'); document.getElementById('btn-hard').classList.remove('active'); saveState(); };
         document.getElementById('btn-hard').onclick = () => { config.hardEdges = true; document.getElementById('btn-hard').classList.add('active'); document.getElementById('btn-soft').classList.remove('active'); saveState(); };
         document.getElementById('btn-velocity-luma').onclick = (e) => { config.velocityLuma = !config.velocityLuma; e.target.classList.toggle('active', config.velocityLuma); saveState(); };
-        
         canvas.onclick = (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } };
         document.getElementById('close-menu').onclick = () => menu.classList.remove('active');
         document.getElementById('toggle-all').onclick = () => {
@@ -741,10 +738,8 @@
             shuf(org); for(let i=0; i<nOrg; i++) sel.add(org[i]);
             shuf(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
             sel.forEach(idx => enabledEffects[idx] = true);
-
             if (Math.random() < 0.05) config.palette = Object.keys(CYCLIC_PALETTES)[Math.floor(Math.random() * Object.keys(CYCLIC_PALETTES).length)];
             else config.palette = Object.keys(STATIC_PALETTES)[Math.floor(Math.random() * Object.keys(STATIC_PALETTES).length)];
-            
             config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
             resize(); 
             particles.forEach(p => p.assignColor());
