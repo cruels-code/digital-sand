@@ -3,45 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL SAND ART - V4.7.1</title>
+    <title>DIGITAL SAND  - V4.7.4</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #00ff00; --bg: #000; --panel-bg: #050505; --border: #222; --text-muted: #666; }
+        :root { --accent: #ffffff; --bg: #000; --panel-bg: #050505; --border: #333; --text-muted: #888; }
         body { margin: 0; overflow: hidden; background-color: var(--bg); display: flex; justify-content: center; align-items: center; font-family: 'Pixelify Sans', sans-serif; color: var(--accent); user-select: none; }
-        canvas { display: block; touch-action: none; cursor: crosshair; }
+        canvas { display: block; touch-action: none; cursor: crosshair; transition: filter 0.3s ease; }
         
-        #menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; padding: 20px; z-index: 100; overflow-y: auto; border: 2px solid var(--border); }
+        #menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.15); display: none; flex-direction: column; align-items: center; padding: 20px; z-index: 100; overflow-y: auto; border: 2px solid var(--border); }
         #menu-overlay.active { display: flex; }
         
         .terminal-header { width: 100%; max-width: 900px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-        .terminal-header h2 { margin: 0; font-size: 12px; opacity: 0.6; letter-spacing: 1px; }
+        .terminal-header h2 { margin: 0; font-size: 16px; opacity: 0.6; letter-spacing: 1px; }
         
         .settings-panel { background: var(--panel-bg); padding: 12px; border: 1px solid var(--border); margin-bottom: 15px; width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 10px; }
         .setting-group { display: flex; flex-direction: column; gap: 6px; }
-        .setting-label { font-size: 8px; color: var(--accent); opacity: 0.5; text-transform: uppercase; }
+        .setting-label { font-size: 12px; color: var(--accent); opacity: 0.5; text-transform: uppercase; }
         
         .controls { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 900px; }
-        .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 5px 10px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 9px; transition: all 0.1s; text-transform: uppercase; }
+        .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 5px 10px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 12px; transition: all 0.1s; text-transform: uppercase; }
         .btn:hover, .btn.active { background: var(--accent); color: var(--bg); }
         
         details { width: 100%; max-width: 900px; border: 1px solid #1a1a1a; margin-bottom: 4px; background: #080808; }
-        summary { padding: 8px; cursor: pointer; font-size: 10px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        summary { padding: 8px; cursor: pointer; font-size: 14px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
         details[open] summary { border-bottom: 1px solid var(--border); color: #fff; }
         
         .effect-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; padding: 10px; }
         .effect-card { background: #0c0c0c; border: 1px solid #1a1a1a; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
         .effect-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .effect-name { font-size: 9px; color: var(--text-muted); }
+        .effect-name { font-size: 11px; color: var(--text-muted); }
         .active-text { color: var(--accent) !important; }
         
         input[type="range"] { -webkit-appearance: none; width: 100%; height: 3px; background: #1a1a1a; outline: none; cursor: pointer; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--accent); border: 1px solid var(--bg); }
-        .strength-label { font-size: 8px; color: #333; display: flex; justify-content: space-between; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent); border: 1px solid var(--bg); }
+        .strength-label { font-size: 10px; color: #333; display: flex; justify-content: space-between; }
         
         .palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 100%; }
-        .palette-grid .btn { font-size: 8px; padding: 3px 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .palette-grid .btn { font-size: 10px; padding: 4px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        #save-indicator { position: fixed; bottom: 10px; right: 10px; font-size: 8px; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+        #save-indicator { position: fixed; bottom: 10px; right: 10px; font-size: 12px; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: var(--border); }
     </style>
@@ -52,7 +52,7 @@
     <div id="save-indicator">>> SYNC_SUCCESS</div>
 
     <div id="menu-overlay">
-        <div class="terminal-header"><h2>V4.7.1 (REFACTORED)</h2></div>
+        <div class="terminal-header"><h2>V4.7.4</h2></div>
 
         <div class="settings-panel">
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -97,8 +97,10 @@
         // 1. CONSTANTS & CONFIGURATION
         // ==========================================
         const CONSTANTS = {
-            CELL_COUNT: 5,
+            BASE_CELL_COUNT: 5,
+            VELOCITY_CELL_COUNT: 11,
             FRICTION: 0.94,
+            LUMA_DECAY: 0.988, 
             BASE_SPEED: 0.5,
             MAX_PARTICLES: 315000,
             COVERAGE_RATIO: 0.2625,
@@ -132,12 +134,11 @@
 
         const PALETTE_DEFS = {
             cyclic: {
-                rainbow: [{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}],
+                rainbow_hdr: [{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}],
                 strobe: [{r:0,g:0,b:0},{r:85,g:85,b:85},{r:170,g:170,b:170},{r:255,g:255,b:255}],
                 toxic: [{r:173,g:255,b:47},{r:255,g:255,b:0},{r:50,g:205,b:50}],
                 abyss: [{r:0,g:10,b:30},{r:0,g:255,b:255},{r:0,g:100,b:150}],
                 glitch: [{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:255}],
-                forest: [{r:0,g:40,b:10},{r:34,g:139,b:34},{r:107,g:142,b:35}],
                 volcano: [{r:40,g:0,b:0},{r:255,g:69,b:0},{r:255,g:215,b:0}],
                 nebula: [{r:75,g:0,b:130},{r:199,g:21,b:133},{r:0,g:0,b:139}],
                 gold: [{r:101,g:67,b:33},{r:255,g:215,b:0},{r:255,g:255,b:200}],
@@ -150,12 +151,10 @@
                 neon: [{r:255,g:0,b:128},{r:0,g:255,b:255},{r:128,g:0,b:255},{r:255,g:255,b:255}],
                 sunset: [{r:255,g:50,b:0},{r:255,g:200,b:0},{r:100,g:0,b:150},{r:255,g:255,b:200}],
                 deepsea: [{r:0,g:20,b:50},{r:0,g:255,b:150},{r:0,g:100,b:255},{r:200,g:255,b:255}],
-                sand: [{r:230,g:204,b:178},{r:221,g:184,b:146},{r:176,g:137,b:104},{r:127,g:85,b:57},{r:254,g:250,b:224}],
                 matrix: [{r:0,g:40,b:0},{r:0,g:255,b:70},{r:20,g:100,b:20},{r:0,g:255,b:0}],
                 cyber: [{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:0},{r:255,g:0,b:100}],
                 magma: [{r:40,g:0,b:0},{r:255,g:0,b:0},{r:255,g:120,b:0},{r:255,g:255,b:0}],
                 frost: [{r:0,g:50,b:100},{r:100,g:200,b:255},{r:200,g:255,b:255},{r:255,g:255,b:255}],
-                forest: [{r:0,g:20,b:10},{r:34,g:139,b:34},{r:107,g:142,b:35},{r:210,g:180,b:140}],
                 vapor: [{r:255,g:113,b:206},{r:1,g:205,b:254},{r:5,g:255,b:161},{r:185,g:103,b:255},{r:255,g:251,b:150}],
                 royal: [{r:75,g:0,b:130},{r:255,g:215,b:0},{r:139,g:0,b:139},{r:218,g:165,b:32}],
                 autumn: [{r:139,g:69,b:19},{r:210,g:105,b:30},{r:255,g:140,b:0},{r:255,g:69,b:0}],
@@ -164,7 +163,7 @@
                 midnight: [{r:25,g:25,b:112},{r:0,g:0,b:205},{r:72,g:61,b:139},{r:176,g:196,b:222}],
                 coral: [{r:255,g:127,b:80},{r:64,g:224,b:208},{r:255,g:99,b:71},{r:127,g:255,b:212}],
                 synth: [{r:36,g:0,b:70},{r:90,g:24,b:154},{r:157,g:78,b:221},{r:255,g:0,b:110}],
-                pastel: [{r:255,g:179,b:186},{r:255,g:255,b:186},{r:186,g:255,b:201},{r:186,g:225,b:255}],
+                monochrome: [{r:255,g:255,b:255},{r:255,g:255,b:255}],
                 monogold: [{r:101,g:67,b:33},{r:255,g:215,b:0},{r:218,g:165,b:32},{r:255,g:255,b:150}]
             }
         };
@@ -179,7 +178,7 @@
             particleCount: 0,
             cells: [],
             lastFrameTime: performance.now(),
-            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow', grainSize: 1 },
+            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 1 },
             enabledEffects: new Array(EFFECTS.length).fill(true),
             effectStrengths: [...DEFAULT_STRENGTHS]
         };
@@ -214,6 +213,14 @@
             Object.entries(PALETTE_DEFS.static).forEach(([k, stops]) => PALETTE_LUTS[k] = createLUT(stops, false));
         }
         buildLUTs();
+
+        function updateCanvasFilter() {
+            if (AppState.config.palette === 'cycle_rainbow_hdr') {
+                $('canvas').style.filter = 'saturate(1.5) contrast(1.2) brightness(1.2)';
+            } else {
+                $('canvas').style.filter = 'none';
+            }
+        }
 
         // ==========================================
         // 4. PERSISTENCE LAYER (Firebase + LocalStorage)
@@ -257,10 +264,13 @@
             }
             if (data) {
                 Object.assign(AppState.config, data.config);
+                // Backwards compatibility migration
+                if (AppState.config.palette === 'cycle_rainbow') AppState.config.palette = 'cycle_rainbow_hdr';
                 if (data.enabledEffects) AppState.enabledEffects = data.enabledEffects;
                 if (data.effectStrengths) AppState.effectStrengths = data.effectStrengths;
             }
             updateUIToggles();
+            updateCanvasFilter();
             resizeEngine();
             buildMenuDOM();
         }
@@ -314,12 +324,13 @@
             [...Object.keys(PALETTE_DEFS.cyclic).map(k=>`cycle_${k}`), ...Object.keys(PALETTE_DEFS.static)].forEach(key => {
                 const btn = el('button', {
                     className: `btn ${AppState.config.palette === key ? 'active' : ''}`,
-                    innerText: key.includes('cycle') ? `[ ${key.split('_')[1].toUpperCase()} ]` : key.charAt(0).toUpperCase() + key.slice(1)
+                    innerText: key.includes('cycle') ? `[ ${key.split('_').slice(1).join('_').toUpperCase()} ]` : key.charAt(0).toUpperCase() + key.slice(1)
                 });
                 btn.onclick = () => {
                     document.querySelectorAll('#palette-list .btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     AppState.config.palette = key;
+                    updateCanvasFilter();
                     syncSave();
                 };
                 pList.appendChild(btn);
@@ -329,10 +340,16 @@
         function setupUIEvents() {
             $('btn-soft').onclick = () => { AppState.config.hardEdges = false; updateUIToggles(); syncSave(); };
             $('btn-hard').onclick = () => { AppState.config.hardEdges = true; updateUIToggles(); syncSave(); };
-            $('btn-velocity-luma').onclick = () => { AppState.config.velocityLuma = !AppState.config.velocityLuma; updateUIToggles(); syncSave(); };
+            $('btn-velocity-luma').onclick = () => { 
+                AppState.config.velocityLuma = !AppState.config.velocityLuma; 
+                updateUIToggles(); 
+                updateCellCount();
+                syncSave(); 
+            };
             
             canvas.onclick = e => { if (e.target === canvas) { menu.classList.add('active'); buildMenuDOM(); } };
             $('close-menu').onclick = () => menu.classList.remove('active');
+            menu.onclick = e => { if (e.target === menu) menu.classList.remove('active'); };
             
             $('toggle-all').onclick = () => {
                 const target = !AppState.enabledEffects.some(e => e); 
@@ -357,6 +374,7 @@
                 AppState.config.palette = allPals[Math.floor(Math.random() * allPals.length)];
                 AppState.config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
                 
+                updateCanvasFilter();
                 resizeEngine(); buildMenuDOM(); syncSave();
             };
 
@@ -405,6 +423,16 @@
             }
         }
 
+        function updateCellCount() {
+            const targetCount = AppState.config.velocityLuma ? CONSTANTS.VELOCITY_CELL_COUNT : CONSTANTS.BASE_CELL_COUNT;
+            while (AppState.cells.length < targetCount) {
+                AppState.cells.push(new Cell(AppState.cells.length));
+            }
+            if (AppState.cells.length > targetCount) {
+                AppState.cells.length = targetCount;
+            }
+        }
+
         function resizeEngine() {
             AppState.width = canvas.width = Math.floor(window.innerWidth);
             AppState.height = canvas.height = Math.floor(window.innerHeight);
@@ -414,22 +442,27 @@
             const newCount = Math.min(CONSTANTS.MAX_PARTICLES, Math.floor((AppState.width * AppState.height * CONSTANTS.COVERAGE_RATIO) / grainArea)); 
             
             const oldData = AppState.particleData;
-            AppState.particleData = new Float32Array(newCount * 5); 
+            AppState.particleData = new Float32Array(newCount * 6); // STRIDE 6: [x, y, vx, vy, phase, luma]
+            const isCompatible = oldData && oldData.length === AppState.particleCount * 6;
             
             for(let i=0; i<newCount; i++) {
-                const offset = i * 5;
-                if (oldData && i < AppState.particleCount) {
-                    AppState.particleData.set(oldData.subarray(offset, offset+5), offset);
+                const offset = i * 6;
+                if (isCompatible && i < AppState.particleCount) {
+                    AppState.particleData.set(oldData.subarray(offset, offset+6), offset);
                 } else {
                     AppState.particleData[offset] = Math.random() * AppState.width;
                     AppState.particleData[offset+1] = Math.random() * AppState.height;
                     AppState.particleData[offset+2] = 0;
                     AppState.particleData[offset+3] = 0;
                     AppState.particleData[offset+4] = Math.random() * 360;
+                    AppState.particleData[offset+5] = 0; // Initialize Luma history
                 }
             }
             AppState.particleCount = newCount;
-            AppState.cells = Array.from({length: CONSTANTS.CELL_COUNT}, (_, i) => new Cell(i));
+            
+            if (AppState.cells.length === 0) {
+                updateCellCount();
+            }
         }
 
         function engineLoop(timestamp) {
@@ -449,6 +482,7 @@
             const currentPalette = PALETTE_LUTS[config.palette];
             const gs = config.grainSize;
             const fPow = Math.pow(CONSTANTS.FRICTION, dt);
+            const lumaDecayPow = Math.pow(CONSTANTS.LUMA_DECAY, dt); // 5x slower decay
             const isStrobe = config.palette === 'cycle_strobe';
             const cycleSpeed = isStrobe ? 15.0 : 1.0;
             const useLuma = config.velocityLuma;
@@ -456,10 +490,10 @@
             const halfW = width / 2; const halfH = height / 2;
 
             for (let i = 0; i < particleCount; i++) {
-                const idx = i * 5;
+                const idx = i * 6; // Stride 6
                 let px = particleData[idx]; let py = particleData[idx+1];
                 let vx = particleData[idx+2]; let vy = particleData[idx+3];
-                let phase = particleData[idx+4];
+                let phase = particleData[idx+4]; let luma = particleData[idx+5];
 
                 // Influence mapping
                 for (let c = 0; c < cells.length; c++) {
@@ -498,7 +532,7 @@
                             case 16: vx += (Math.random()-0.5)*s*10; vy += (Math.random()-0.5)*s*10; break;
                             case 17: vx += Math.cos(angle)*(1+s*3); vy += Math.sin(angle)*(1+s*3); break;
                             case 18: vx -= (nx*5)*s; break;
-                            case 19: vx += (Math.round(px/75)*75-px)*s*0.6; vy += (Math.round(py/75)*75-py)*s*0.6; break;
+                            case 19: vx += (Math.round(px/1125)*1125-px)*s*0.6; vy += (Math.round(py/1125)*1125-py)*s*0.6; break;
                             case 20: vx += Math.sin(py*0.05+cell.rotation*0.5)*s*3; vy += Math.sin(px*0.05-cell.rotation*0.5)*s*3; break;
                             case 21: if (Math.sin(px*0.1)*Math.sin(py*0.1)>0) vx += 2*s; break;
                             case 22: vx += Math.cos(angle)*Math.sin(cell.rotation*4)*5*s; vy += Math.sin(angle)*Math.sin(cell.rotation*4)*5*s; break;
@@ -509,7 +543,7 @@
                             case 27: vx += dx*0.05*s; vy += dy*0.05*s; break;
                             case 28: vy -= 2*s; break;
                             case 29: vx += ((Math.floor(px/20)+Math.floor(py/20))%2==0?1:-1)*s*4; break;
-                            case 30: vx += (Math.round(dx/25)*25-dx)*s*0.5; vy += (Math.round(dy/25)*25-dy)*s*0.5; break;
+                            case 30: vx += (Math.round(dx/375)*375-dx)*s*0.5; vy += (Math.round(dy/375)*375-dy)*s*0.5; break;
                             case 31: vx += (Math.round(px/15)*15-px)*s*0.8; vy += (Math.round(py/15)*15-py)*s*0.8; break;
                             case 32: vx += (Math.round(px/12)*12-px)*s*0.9; break;
                             case 33: vx += ((px+py)%30<(px-py)%30?1:-1)*s*2; break;
@@ -517,11 +551,11 @@
                             case 35: const spA = Math.round(angle*4)/4; vx += (Math.cos(spA)*dist-dx)*s*0.4; vy += (Math.sin(spA)*dist-dy)*s*0.4; break;
                             case 36: vx += (Math.floor(px/40)*40+(py%40)-px)*s*0.5; break;
                             case 37: const sdA = angle+dist*0.033; vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break;
-                            case 38: vx += ((Math.floor(px/30)+Math.floor(py/30))%2==0?1:-1)*s*3; break;
+                            case 38: vx += ((Math.floor(px/300)+Math.floor(py/300))%2==0?1:-1)*s*3; break;
                             case 39: const dSu = Math.round((px+py)/25)*25; const dDi = Math.round((px-py)/25)*25; vx += ((dSu+dDi)/2-px)*s*0.7; vy += ((dSu-dDi)/2-py)*s*0.7; break;
                             case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+cell.rotation; vx += (cell.x+Math.cos(fAng)*dist-px)*s*0.125; vy += (cell.y+Math.sin(fAng)*dist-py)*s*0.125; break;
                             case 41: const mX = nx*1.5-0.5; const mY = ny*1.5; let tx=0, ty=0, mi=0; while(tx*tx+ty*ty<=4 && mi < 8){ const xt=tx*tx-ty*ty+mX; ty=2*tx*ty+mY; tx=xt; mi++; } if(mi < 8){ vx += Math.cos(angle)*s*6; vy += Math.sin(angle)*s*6;} break;
-                            case 42: vx += (Math.floor(px/40)*40+20-px)*s*0.6; vy += (Math.floor(py/40)*40+20-py)*s*0.6; break;
+                            case 42: vx += (Math.floor(px/300)*300+150-px)*s*0.6; vy += (Math.floor(py/300)*300+150-py)*s*0.6; break;
                             case 43: vx += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.sin(cell.rotation)*s*5:-Math.sin(cell.rotation)*s*5; vy += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.cos(cell.rotation)*s*5:-Math.cos(cell.rotation)*s*5; break;
                             case 44: const tAng = Math.atan2(py-height, px-width/2); vx += Math.cos(tAng)*s*4; vy += Math.sin(tAng)*s*4; break;
                             case 45: const ix = Math.round((px-py)/1.73/30)*30*1.73; const iy = Math.round((px+py)/30)*30; vx += (ix+iy/2-px)*s*0.35; vy += (iy/2-py)*s*0.35; break;
@@ -548,18 +582,20 @@
                 if (px < 0) px += width; else if (px >= width) px -= width;
                 if (py < 0) py += height; else if (py >= height) py -= height;
 
+                // Luma Decay Logic (5x slower than velocity decay)
+                const targetLuma = Math.min(1.0, (vx*vx + vy*vy) / 144);
+                luma = Math.max(targetLuma, luma * lumaDecayPow);
+
                 particleData[idx] = px; particleData[idx+1] = py;
                 particleData[idx+2] = vx; particleData[idx+3] = vy;
-                particleData[idx+4] = phase;
+                particleData[idx+4] = phase; particleData[idx+5] = luma;
 
                 let color = currentPalette[phase | 0];
                 
                 if (useLuma) {
-                    const v2 = (vx*vx + vy*vy);
-                    const lMult = Math.min(1.0, v2 / 144);
-                    const r = (color & 0xFF) * lMult;
-                    const g = ((color >> 8) & 0xFF) * lMult;
-                    const b = ((color >> 16) & 0xFF) * lMult;
+                    const r = (color & 0xFF) * luma;
+                    const g = ((color >> 8) & 0xFF) * luma;
+                    const b = ((color >> 16) & 0xFF) * luma;
                     color = (255 << 24) | (b << 16) | (g << 8) | r;
                 }
 
@@ -585,6 +621,7 @@
         }
 
         setupUIEvents();
+        updateCanvasFilter();
         resizeEngine(); 
         requestAnimationFrame(engineLoop);
     </script>
