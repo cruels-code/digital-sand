@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>digital sand V4.5.5</title>
+    <title>TERMINAL SAND ART - V4.5.8</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400&display=swap');
-
         body {
             margin: 0;
             overflow: hidden;
@@ -14,7 +13,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Fira Code', 'Courier New', monospace;
+            font-family: 'Pixelify Sans', sans-serif;
             color: #00ff00;
             user-select: none;
         }
@@ -33,69 +32,65 @@
             display: none;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
+            padding: 20px;
             z-index: 100;
             overflow-y: auto;
-            border: 2px solid #333;
+            border: 2px solid #222;
         }
         #menu-overlay.active {
             display: flex;
         }
         .terminal-header {
             width: 100%;
-            max-width: 1100px;
-            margin-bottom: 30px;
+            max-width: 900px;
+            margin-bottom: 15px;
             border-bottom: 1px solid #333;
-            padding-bottom: 10px;
+            padding-bottom: 5px;
+            text-align: left;
         }
         .terminal-header h2 {
             margin: 0;
-            font-weight: 400;
-            letter-spacing: 2px;
-            font-size: 24px;
-        }
-        .terminal-header p {
-            font-size: 12px;
-            opacity: 0.7;
+            font-size: 14px;
+            opacity: 0.8;
+            letter-spacing: 1px;
         }
         .settings-panel {
-            background: #0a0a0a;
-            padding: 20px;
-            border: 1px solid #333;
-            margin-bottom: 25px;
+            background: #050505;
+            padding: 15px;
+            border: 1px solid #222;
+            margin-bottom: 20px;
             width: 100%;
-            max-width: 1100px;
+            max-width: 900px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            justify-content: flex-start;
+            gap: 15px;
         }
         .setting-group {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
         .setting-label {
-            font-size: 10px;
+            font-size: 9px;
             color: #00ff00;
-            opacity: 0.8;
+            opacity: 0.6;
             text-transform: uppercase;
         }
         .controls {
             display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 10px;
+            margin-bottom: 20px;
             width: 100%;
-            max-width: 1100px;
+            max-width: 900px;
         }
         .btn {
             background: transparent;
             border: 1px solid #00ff00;
             color: #00ff00;
-            padding: 8px 16px;
+            padding: 6px 12px;
             cursor: pointer;
-            font-family: 'Fira Code', monospace;
-            font-size: 11px;
+            font-family: 'Pixelify Sans', sans-serif;
+            font-size: 10px;
             transition: all 0.1s;
             text-transform: uppercase;
         }
@@ -107,44 +102,67 @@
             background: #00ff00;
             color: #000;
         }
-        #effects-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 8px;
+        
+        /* Dropdown Styling */
+        details {
             width: 100%;
-            max-width: 1100px;
-            padding-bottom: 60px;
-        }
-        .effect-item {
+            max-width: 900px;
             border: 1px solid #222;
-            padding: 8px 12px;
+            margin-bottom: 5px;
+            background: #080808;
+        }
+        summary {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 11px;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid transparent;
+        }
+        details[open] summary {
+            border-bottom: 1px solid #222;
+            color: #fff;
+        }
+        summary::-webkit-details-marker { display: none; }
+        .effect-category-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 5px;
+            padding: 10px;
+        }
+
+        .effect-item {
+            border: 1px solid #1a1a1a;
+            padding: 5px 8px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             cursor: pointer;
         }
-        .effect-item:hover {
-            border-color: #00ff00;
-        }
-        .effect-item input {
-            cursor: pointer;
-            filter: grayscale(1) invert(1) brightness(2);
-        }
-        .effect-name {
-            font-size: 11px;
-            color: #888;
-        }
-        .effect-item:has(input:checked) .effect-name {
-            color: #00ff00;
-        }
+        .effect-item:hover { border-color: #00ff00; }
+        .effect-item input { cursor: pointer; transform: scale(0.8); }
+        .effect-name { font-size: 9px; color: #666; }
+        .effect-item:has(input:checked) .effect-name { color: #00ff00; }
+
+        /* Palette Grid - Rows of 5 */
         .palette-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
             width: 100%;
         }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #333; }
+        .palette-container .btn {
+            font-size: 8.5px;
+            padding: 4px 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #222; }
     </style>
 </head>
 <body>
@@ -153,20 +171,27 @@
 
     <div id="menu-overlay">
         <div class="terminal-header">
-            <h2>> SYSTEM.CORE.ALGORITHMS.V4.5.5</h2>
-            <p>CONSERVATION_ACTIVE // BALANCED_FORCES // GRAIN_SIZE_OPTIMIZED</p>
+            <h2>V4.5.8</h2>
         </div>
 
         <div class="settings-panel">
-            <div class="setting-group">
-                <span class="setting-label">FORCE_EDGE_MODEL</span>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn active" id="btn-soft">[ SOFT_FALLOFF ]</button>
-                    <button class="btn" id="btn-hard">[ HARD_BOX ]</button>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div class="setting-group">
+                    <span class="setting-label">EDGE_DYNAMICS</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn active" id="btn-soft">[ SOFT ]</button>
+                        <button class="btn" id="btn-hard">[ HARD ]</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <span class="setting-label">LUMA_MAP</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn" id="btn-velocity-luma">[ VELOCITY ]</button>
+                    </div>
                 </div>
             </div>
             <div class="setting-group">
-                <span class="setting-label">COLOR_MAP_SELECTION (8-BIT_PRECISION)</span>
+                <span class="setting-label">COLOR_REGISTRY (5-WIDE)</span>
                 <div class="palette-container" id="palette-list"></div>
             </div>
         </div>
@@ -174,16 +199,31 @@
         <div class="controls">
             <button class="btn" id="toggle-all">[ Toggle_All ]</button>
             <button class="btn" id="randomise">[ RANDOMISE ]</button>
-            <button class="btn" id="close-menu">[ RESUME_EXECUTION ]</button>
+            <button class="btn" id="close-menu">[ RESUME ]</button>
         </div>
-        <div id="effects-grid"></div>
+        
+        <details open>
+            <summary><span>[ ORGANIC_STRUCTURES ]</span><span>+</span></summary>
+            <div class="effect-category-content" id="cat-organic"></div>
+        </details>
+
+        <details open>
+            <summary><span>[ FLUID_DYNAMICS ]</span><span>+</span></summary>
+            <div class="effect-category-content" id="cat-fluid"></div>
+        </details>
+
+        <details open>
+            <summary><span>[ CHROMA_OPERATORS ]</span><span>+</span></summary>
+            <div class="effect-category-content" id="cat-chroma"></div>
+        </details>
+        
+        <div style="height: 100px;"></div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d', { alpha: false });
         const menu = document.getElementById('menu-overlay');
-        const effectsGrid = document.getElementById('effects-grid');
 
         let width, height;
         let particles = [];
@@ -196,6 +236,7 @@
 
         const config = {
             hardEdges: false,
+            velocityLuma: false,
             palette: 'cycle_strobe', 
             grainSize: 1 
         };
@@ -314,8 +355,7 @@
                 this.vx *= f; this.vy *= f;
 
                 if (CYCLIC_PALETTES[config.palette]) {
-                    let cycleSpeed = 1.0;
-                    if (config.palette === 'cycle_strobe') cycleSpeed = 15.0; 
+                    let cycleSpeed = config.palette === 'cycle_strobe' ? 15.0 : 1.0;
                     this.phase = (this.phase + cycleSpeed * dt) % 360;
                     if (this.phase < 0) this.phase += 360;
                     const c = CYCLIC_PALETTES[config.palette][Math.floor(this.phase)];
@@ -333,6 +373,8 @@
             constructor(id) {
                 this.id = id; this.x = Math.random() * (width || window.innerWidth);
                 this.y = Math.random() * (height || window.innerHeight);
+                this.vx = 0; this.vy = 0;
+                this.targetVx = 0; this.targetVy = 0;
                 this.moveTimer = 0; this.reset();
             }
             reset() {
@@ -346,9 +388,10 @@
                 this.changeMovement();
             }
             changeMovement() {
-                const angle = Math.floor(Math.random() * 8) * (Math.PI / 4);
+                const angle = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
                 const speed = (0.5 + Math.random() * 4.5);
-                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.targetVx = Math.cos(angle) * speed; 
+                this.targetVy = Math.sin(angle) * speed;
                 this.moveTimer = 1000 + Math.random() * 2000;
             }
             update(dt) {
@@ -357,6 +400,9 @@
                 this.moveTimer -= dtMs;
                 if (this.timer >= this.duration || !enabledEffects[this.effectIndex]) this.reset();
                 else if (this.moveTimer <= 0) this.changeMovement();
+                const inertiaEase = 1 - Math.pow(0.96, dt); 
+                this.vx += (this.targetVx - this.vx) * inertiaEase;
+                this.vy += (this.targetVy - this.vy) * inertiaEase;
                 this.x += this.vx * dt; this.y += this.vy * dt;
                 this.rotation += 0.015 * dt;
                 if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
@@ -395,8 +441,8 @@
                         case 16: p.vx += (Math.random()-0.5)*s*10; p.vy += (Math.random()-0.5)*s*10; break;
                         case 17: p.vx += Math.cos(angle)*(1+s*3); p.vy += Math.sin(angle)*(1+s*3); break;
                         case 18: p.vx -= (normX*5)*s; break;
-                        case 19: p.vx += (Math.round(p.x/75)*75-p.x)*s*0.6; p.vy += (Math.round(p.y/75)*75-p.y)*s*0.6; break; 
-                        case 20: p.vx += Math.sin(p.y*0.05+this.rotation*0.5)*s*3; p.vy += Math.sin(p.x*0.05-this.rotation*0.5)*s*3; break; 
+                        case 19: p.vx += (Math.round(p.x/75)*75-p.x)*s*0.6; p.vy += (Math.round(p.y/75)*75-p.y)*s*0.6; break;
+                        case 20: p.vx += Math.sin(p.y*0.05+this.rotation*0.5)*s*3; p.vy += Math.sin(p.x*0.05-this.rotation*0.5)*s*3; break;
                         case 21: if (Math.sin(p.x*0.1)*Math.sin(p.y*0.1)>0) p.vx += 2*s; break;
                         case 22: p.vx += Math.cos(angle)*Math.sin(this.rotation*4)*5*s; p.vy += Math.sin(angle)*Math.sin(this.rotation*4)*5*s; break;
                         case 23: p.vx += Math.tan(normX*0.5)*s*2; p.vy += Math.cos(normY*3)*s*3; break;
@@ -410,43 +456,43 @@
                         case 31: p.vx += (Math.round(p.x/15)*15-p.x)*s*0.8; p.vy += (Math.round(p.y/15)*15-p.y)*s*0.8; break;
                         case 32: p.vx += (Math.round(p.x/12)*12-p.x)*s*0.9; break;
                         case 33: p.vx += ((p.x+p.y)%30<(p.x-p.y)%30?1:-1)*s*2; break;
-                        case 34: p.vx += (Math.round(p.x/100)*100-p.x)*s*0.3; p.vy += (Math.round(p.y/60)*60-p.y)*s*0.3; break; 
-                        case 35: const spA = Math.round(angle*4)/4; p.vx += (Math.cos(spA)*dist-dx)*s*0.4; p.vy += (Math.sin(spA)*dist-dy)*s*0.4; break;
+                        case 34: p.vx += (Math.round(p.x/100)*100-p.x)*s*0.3; p.vy += (Math.round(p.y/60)*60-p.y)*s*0.3; break;
+                        case 35: const s_pA = Math.round(angle*4)/4; p.vx += (Math.cos(s_pA)*dist-dx)*s*0.4; p.vy += (Math.sin(s_pA)*dist-dy)*s*0.4; break;
                         case 36: p.vx += (Math.floor(p.x/40)*40+(p.y%40)-p.x)*s*0.5; break;
-                        case 37: const sdA = angle+dist*0.033; p.vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; p.vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break; 
+                        case 37: const s_dA = angle+dist*0.033; p.vx += (Math.cos(Math.round(s_dA*10)/10)*dist-dx)*s*0.4; p.vy += (Math.sin(Math.round(s_dA*10)/10)*dist-dy)*s*0.4; break;
                         case 38: p.vx += ((Math.floor(p.x/30)+Math.floor(p.y/30))%2==0?1:-1)*s*3; break;
-                        case 39: const dSu = Math.round((p.x+p.y)/25)*25; const dDi = Math.round((p.x-p.y)/25)*25; p.vx += ((dSu+dDi)/2-p.x)*s*0.7; p.vy += ((dSu-dDi)/2-p.y)*s*0.7; break;
-                        case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(fAng)*dist-p.x)*s*0.125; p.vy += (this.y+Math.sin(fAng)*dist-p.y)*s*0.125; break; 
-                        case 41: const mx0 = normX*1.5-0.5; const my0 = normY*1.5; let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+mx0; my=2*mx*my+my0; mx=xt; mi++; } if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
+                        case 39: const d_Su = Math.round((p.x+p.y)/25)*25; const d_Di = Math.round((p.x-p.y)/25)*25; p.vx += ((d_Su+d_Di)/2-p.x)*s*0.7; p.vy += ((d_Su-d_Di)/2-p.y)*s*0.7; break;
+                        case 40: const gld = Math.PI*(3-Math.sqrt(5)); const f_Ang = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(f_Ang)*dist-p.x)*s*0.125; p.vy += (this.y+Math.sin(f_Ang)*dist-p.y)*s*0.125; break;
+                        case 41: const m_x0 = normX*1.5-0.5; const m_y0 = normY*1.5; let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+m_x0; my=2*mx*my+m_y0; mx=xt; mi++; } if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
                         case 42: p.vx += (Math.floor(p.x/40)*40+20-p.x)*s*0.6; p.vy += (Math.floor(p.y/40)*40+20-p.y)*s*0.6; break;
-                        case 43: p.vx += (Math.floor(normX*(1<<4)/2+(1<<4)/2)+Math.floor(normY*(1<<4)/2+(1<<4)/2))%2==0?Math.sin(this.rotation)*s*5:-Math.sin(this.rotation)*s*5; p.vy += (Math.floor(normX*(1<<4)/2+(1<<4)/2)+Math.floor(normY*(1<<4)/2+(1<<4)/2))%2==0?Math.cos(this.rotation)*s*5:-Math.cos(this.rotation)*s*5; break;
-                        case 44: const tAng = Math.atan2(p.y-height, p.x-width/2); p.vx += Math.cos(tAng)*s*4; p.vy += Math.sin(tAng)*s*4; break;
-                        case 45: const ix = Math.round((p.x-p.y)/1.73/30)*30*1.73; const iy = Math.round((p.x+p.y)/30)*30; p.vx += (ix+iy/2-p.x)*s*0.35; p.vy += (iy/2-p.y)*s*0.35; break; 
+                        case 43: p.vx += (Math.floor(normX*8+8)+Math.floor(normY*8+8))%2==0?Math.sin(this.rotation)*s*5:-Math.sin(this.rotation)*s*5; p.vy += (Math.floor(normX*8+8)+Math.floor(normY*8+8))%2==0?Math.cos(this.rotation)*s*5:-Math.cos(this.rotation)*s*5; break;
+                        case 44: const t_Ang = Math.atan2(p.y-height, p.x-width/2); p.vx += Math.cos(t_Ang)*s*4; p.vy += Math.sin(t_Ang)*s*4; break;
+                        case 45: const ix = Math.round((p.x-p.y)/1.73/30)*30*1.73; const iy = Math.round((p.x+p.y)/30)*30; p.vx += (ix+iy/2-p.x)*s*0.35; p.vy += (iy/2-p.y)*s*0.35; break;
                         case 46: if(Math.abs(angle-(this.rotation*2)%(Math.PI*2))<0.1 || Math.abs(angle-(this.rotation*2)%(Math.PI*2))>Math.PI*2-0.1){ p.vx += Math.cos(angle)*s*6; p.vy += Math.sin(angle)*s*6; } break;
-                        case 47: const cxS = Math.round(p.x/20)*20; const cyS = Math.round(p.y/20)*20; if(Math.abs(cxS-p.x)<Math.abs(cyS-p.y)) p.vx += (cxS-p.x)*s*0.9; else p.vy += (cyS-p.y)*s*0.9; break;
+                        case 47: const cx_S = Math.round(p.x/20)*20; const cy_S = Math.round(p.y/20)*20; if(Math.abs(cx_S-p.x)<Math.abs(cy_S-p.y)) p.vx += (cx_S-p.x)*s*0.9; else p.vy += (cy_S-p.y)*s*0.9; break;
                         case 48: if(p.x%45<5) p.vy += Math.sin(p.x*0.01)*s*4; if(p.y%45<5) p.vx += Math.cos(p.y*0.01)*s*4; break;
-                        case 49: const sdTX = Math.floor(this.x/50)*50+Math.cos(this.id)*hw; const sdTY = Math.floor(this.y/50)*50+Math.sin(this.id)*hh; p.vx += (sdTX-p.x)*s*0.048; p.vy += (sdTY-p.y)*s*0.048; break; 
+                        case 49: const s_dTX = Math.floor(this.x/50)*50+Math.cos(this.id)*hw; const s_dTY = Math.floor(this.y/50)*50+Math.sin(this.id)*hh; p.vx += (s_dTX-p.x)*s*0.048; p.vy += (s_dTY-p.y)*s*0.048; break;
                         case 50: p.vx += ((Math.floor(p.x/25)+Math.floor(p.y/25))%2==0?1:-1)*s*3; p.vy += -((Math.floor(p.x/25)+Math.floor(p.y/25))%2==0?1:-1)*s*3; break;
                         case 51: p.vx += Math.cos(angle)*((p.luma/255)*6*s-3); p.vy += Math.sin(angle)*((p.luma/255)*6*s-3); break;
                         case 52: if (p.r > p.g && p.r > p.b) p.vx -= s * 5; else if (p.g > p.r && p.g > p.b) p.vy -= s * 5; else p.vx += s * 5; break;
-                        case 53: const sAngV = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b)/255)*Math.PI*2+this.rotation; p.vx += Math.cos(sAngV)*s*5; p.vy += Math.sin(sAngV)*s*5; break;
+                        case 53: const s_Ang_V = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b)/255)*Math.PI*2+this.rotation; p.vx += Math.cos(s_Ang_V)*s*5; p.vy += Math.sin(s_Ang_V)*s*5; break;
                         case 54: p.vx += Math.cos(angle)*(p.r > p.b ? 1 : -1)*s*6; p.vy += Math.sin(angle)*(p.r > p.b ? 1 : -1)*s*6; break;
                         case 55: p.vx += (p.g > 150 ? Math.sin(p.y*0.1)*s*5 : -Math.sin(p.y*0.1)*s*5); break;
-                        case 56: p.vx += (Math.round(p.x/40)*40-p.x)*(p.r/255)*s*3.2; break; 
+                        case 56: p.vx += (Math.round(p.x/40)*40-p.x)*(p.r/255)*s*3.2; break;
                         case 57: p.vx += Math.cos(angle+1.57)*(Math.floor(p.luma/50)%2==0?1:-1)*s*5; p.vy += Math.sin(angle+1.57)*(Math.floor(p.luma/50)%2==0?1:-1)*s*5; break;
                         case 58: p.vx += Math.cos(angle)*(1-p.luma/255)*s*7; p.vy += Math.sin(angle)*(1-p.luma/255)*s*7; break;
                         case 59: p.vx += ((p.r+p.g)/2 > p.b ? 1 : -1)*s*5; break;
-                        case 60: const lStp = height / 6; p.vy += (lStp * Math.floor(p.luma / 42.5) + lStp/2 - ((p.y - this.y + height/2) % height)) * s * 0.1; break;
+                        case 60: const l_Stp = height / 6; p.vy += (l_Stp * Math.floor(p.luma / 42.5) + l_Stp/2 - ((p.y - this.y + height/2) % height)) * s * 0.1; break;
                         case 61: if(p.r > p.g && p.r > p.b) { p.vx += (-hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; } 
                             else if(p.g > p.r && p.g > p.b) { p.vx += (hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; }
                             else if(p.b > p.r && p.b > p.g) { p.vx += (-hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; } break;
-                        case 62: const sDv = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b) > 100 ? 1 : -1); p.vx += Math.cos(angle)*sDv*s*1.5; p.vy += Math.sin(angle)*sDv*s*1.5; break; 
-                        case 63: const hAngM = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(hAngM)*dist - dx)*s*0.3; p.vy += (Math.sin(hAngM)*dist - dy)*s*0.3; break;
-                        case 64: let pRotS = p.r > 200 ? 0.05 : (p.g > 200 ? -0.05 : 0.02); p.vx += Math.cos(angle + 1.57)*dist*pRotS*s; p.vy += Math.sin(angle + 1.57)*dist*pRotS*s; break;
-                        case 65: p.vx += Math.cos(angle)*(p.luma/255 > 0.5 ? -1 : 1)*s*1.25; p.vy += Math.sin(angle)*(p.luma/255 > 0.5 ? -1 : 1)*s*1.25; break; 
+                        case 62: const s_Dvv = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b) > 100 ? 1 : -1); p.vx += Math.cos(angle)*s_Dvv*s*1.5; p.vy += Math.sin(angle)*s_Dvv*s*1.5; break;
+                        case 63: const h_AngM = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(h_AngM)*dist - dx)*s*0.3; p.vy += (Math.sin(h_AngM)*dist - dy) * s * 0.3; break;
+                        case 64: let p_RotS = p.r > 200 ? 0.05 : (p.g > 200 ? -0.05 : 0.02); p.vx += Math.cos(angle + 1.57)*dist*p_RotS*s; p.vy += Math.sin(angle + 1.57)*dist*p_RotS*s; break;
+                        case 65: p.vx += Math.cos(angle)*(p.luma/255 > 0.5 ? -1 : 1)*s*1.25; p.vy += Math.sin(angle)*(p.luma/255 > 0.5 ? -1 : 1)*s*1.25; break;
                         case 66: if(p.r < 100) p.vx -= s*5; else if(p.g < 100) p.vy -= s*5; else if(p.b < 100) p.vx += s*5; break;
-                        case 67: p.vx += Math.cos(angle)*Math.sin(dist*0.1 - this.rotation*(p.luma/50))*s*1; p.vy += Math.sin(angle)*Math.sin(dist*0.1 - this.rotation*(p.luma/50))*s*1; break; 
-                        case 68: const cgOfs = (p.phase/360)*20; p.vx += (Math.round((p.x + cgOfs)/30)*30 - cgOfs - p.x)*s*0.6; break;
+                        case 67: p.vx += Math.cos(angle)*Math.sin(dist*0.1 - this.rotation*(p.luma/50))*s*1; p.vy += Math.sin(angle)*Math.sin(dist*0.1 - this.rotation*(p.luma/50))*s*1; break;
+                        case 68: const cg_OOfs = (p.phase/360)*20; p.vx += (Math.round((p.x + cg_OOfs)/30)*30 - cg_OOfs - p.x)*s*0.6; break;
                     }
                 }
             }
@@ -458,7 +504,13 @@
         }
 
         function buildMenu() {
-            effectsGrid.innerHTML = '';
+            // Dropdown content generation
+            const catOrganic = document.getElementById('cat-organic');
+            const catFluid = document.getElementById('cat-fluid');
+            const catChroma = document.getElementById('cat-chroma');
+            
+            catOrganic.innerHTML = ''; catFluid.innerHTML = ''; catChroma.innerHTML = '';
+
             EFFECT_NAMES.forEach((name, idx) => {
                 const div = document.createElement('div');
                 div.className = 'effect-item';
@@ -470,24 +522,22 @@
                         enabledEffects[idx] = input.checked;
                     } else { enabledEffects[idx] = e.target.checked; }
                 });
-                effectsGrid.appendChild(div);
+
+                if (name.includes('[O]')) catOrganic.appendChild(div);
+                else if (name.includes('[C]')) catChroma.appendChild(div);
+                else catFluid.appendChild(div);
             });
 
+            // Palette Grid List
             const pList = document.getElementById('palette-list');
             pList.innerHTML = '';
-            Object.keys(CYCLIC_PALETTES).forEach(key => {
+            
+            const allPals = [...Object.keys(CYCLIC_PALETTES), ...Object.keys(STATIC_PALETTES)];
+            allPals.forEach(key => {
                 const btn = document.createElement('button');
                 btn.className = 'btn' + (config.palette === key ? ' active' : '');
                 btn.dataset.palette = key;
-                btn.innerText = `[ ${key.split('_')[1].toUpperCase()}_CYCLE ]`;
-                btn.onclick = (e) => selectPalette(e, key);
-                pList.appendChild(btn);
-            });
-            Object.keys(STATIC_PALETTES).forEach(key => {
-                const btn = document.createElement('button');
-                btn.className = 'btn' + (config.palette === key ? ' active' : '');
-                btn.dataset.palette = key;
-                btn.innerText = key.charAt(0).toUpperCase() + key.slice(1);
+                btn.innerText = key.includes('cycle') ? `[ ${key.split('_')[1].toUpperCase()} ]` : key.charAt(0).toUpperCase() + key.slice(1);
                 btn.onclick = (e) => selectPalette(e, key);
                 pList.appendChild(btn);
             });
@@ -503,12 +553,7 @@
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            
-            // AREA COVERAGE RATIOS: 1x1=10%, 2x2=15%, 3x3=20%
-            let coverageRatio = 0.10;
-            if (config.grainSize === 2) coverageRatio = 0.15;
-            else if (config.grainSize === 3) coverageRatio = 0.20;
-            
+            let coverageRatio = config.grainSize === 2 ? 0.15 : (config.grainSize === 3 ? 0.20 : 0.10);
             particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
             adjustParticles();
             cells = [];
@@ -526,7 +571,7 @@
         function loop(timestamp) {
             const dt = Math.min(2.0, (timestamp - lastFrameTime) / 16.66); 
             lastFrameTime = timestamp;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
             ctx.fillRect(0, 0, width, height);
             cells.forEach(cell => cell.update(dt));
             const imageData = ctx.getImageData(0, 0, width, height);
@@ -537,6 +582,7 @@
                 const p = particles[i];
                 for (let j = 0; j < cells.length; j++) cells[j].applyForce(p, dt);
                 p.update(dt);
+                let lumaFactor = config.velocityLuma ? Math.min(1.0, Math.sqrt(p.vx * p.vx + p.vy * p.vy) / 12.0) : 1.0;
                 const px = Math.floor(p.x); const py = Math.floor(p.y);
                 for (let gy = 0; gy < gs; gy++) {
                     const py_off = py + gy;
@@ -545,7 +591,7 @@
                         const px_off = px + gx;
                         if (px_off < 0 || px_off >= width) continue;
                         const idx = (py_off * width + px_off) * 4;
-                        data[idx] = p.r; data[idx+1] = p.g; data[idx+2] = p.b; data[idx+3] = 255;
+                        data[idx] = p.r * lumaFactor; data[idx+1] = p.g * lumaFactor; data[idx+2] = p.b * lumaFactor; data[idx+3] = 255;
                     }
                 }
             }
@@ -561,6 +607,10 @@
             config.hardEdges = true; e.target.classList.add('active');
             document.getElementById('btn-soft').classList.remove('active');
         });
+        document.getElementById('btn-velocity-luma').addEventListener('click', (e) => {
+            config.velocityLuma = !config.velocityLuma;
+            e.target.classList.toggle('active', config.velocityLuma);
+        });
 
         canvas.addEventListener('click', (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } });
         document.getElementById('close-menu').addEventListener('click', () => { menu.classList.remove('active'); });
@@ -574,7 +624,6 @@
             const orgIndices = EFFECT_NAMES.map((n, i) => n.includes('[O]') ? i : -1).filter(i => i !== -1);
             const dynIndices = EFFECT_NAMES.map((n, i) => !n.includes('[O]') && !n.includes('[C]') ? i : -1).filter(i => i !== -1);
             const colIndices = EFFECT_NAMES.map((n, i) => n.includes('[C]') ? i : -1).filter(i => i !== -1);
-            
             const selected = new Set();
             selected.add(colIndices[Math.floor(Math.random() * colIndices.length)]);
             const numOrg = Math.random() < 0.5 ? 3 : 4;
@@ -591,11 +640,11 @@
                 const keys = Object.keys(STATIC_PALETTES);
                 config.palette = keys[Math.floor(Math.random() * keys.length)];
             }
-
-            // RANDOM GRAIN SIZE UPDATE: 1, 2, or 3
             config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
-            
-            resize(); buildMenu();
+            resize(); 
+            // Fix: ensure colors are applied immediately after randomise
+            particles.forEach(p => p.assignColor());
+            buildMenu();
         });
 
         window.addEventListener('resize', resize);
