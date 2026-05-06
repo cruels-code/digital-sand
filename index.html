@@ -259,11 +259,36 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-sand-art';
+        // SAFETY CHECK: Only attempt to initialize Firebase if the environment provides a config.
+        // This prevents the "Uncaught ReferenceError: __firebase_config is not defined" error on GitHub Pages.
+        const hasConfig = typeof __firebase_config !== 'undefined';
+        const firebaseConfig = hasConfig ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'standalone-sand-art';
+
+        let db = null;
+        let auth = null;
+        let user = null;
+
+        if (hasConfig) {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            const initAuth = async () => {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            };
+
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user) loadState();
+            });
+
+            initAuth();
+        }
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d', { alpha: false });
@@ -272,7 +297,6 @@
         let width = 0, height = 0;
         let particles = [];
         let cells = [];
-        let user = null;
         let particleCount = 0; 
         const CELL_COUNT = 5; 
         const FRICTION = 0.94; 
@@ -307,23 +331,8 @@
         let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
         let effectStrengths = new Array(EFFECT_NAMES.length).fill(100);
 
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-
-        onAuthStateChanged(auth, (u) => {
-            user = u;
-            if (user) loadState();
-        });
-
-        initAuth();
-
         async function saveState() {
-            if (!user) return;
+            if (!db || !user) return;
             try {
                 const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
                 await setDoc(stateRef, {
@@ -339,20 +348,26 @@
         }
 
         async function loadState() {
-            if (!user) return;
-            const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
-            const snap = await getDoc(stateRef);
-            if (snap.exists()) {
-                const data = snap.data();
-                Object.assign(config, data.config);
-                enabledEffects = data.enabledEffects;
-                effectStrengths = data.effectStrengths;
-                document.getElementById('btn-soft').classList.toggle('active', !config.hardEdges);
-                document.getElementById('btn-hard').classList.toggle('active', config.hardEdges);
-                document.getElementById('btn-velocity-luma').classList.toggle('active', config.velocityLuma);
-                resize();
-                buildMenu();
-            } else {
+            if (!db || !user) return;
+            try {
+                const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
+                const snap = await getDoc(stateRef);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    Object.assign(config, data.config);
+                    enabledEffects = data.enabledEffects;
+                    effectStrengths = data.effectStrengths;
+                    document.getElementById('btn-soft').classList.toggle('active', !config.hardEdges);
+                    document.getElementById('btn-hard').classList.toggle('active', config.hardEdges);
+                    document.getElementById('btn-velocity-luma').classList.toggle('active', config.velocityLuma);
+                    resize();
+                    buildMenu();
+                } else {
+                    resize();
+                    buildMenu();
+                }
+            } catch(e) {
+                console.warn("Persistence not available, using local defaults.");
                 resize();
                 buildMenu();
             }
@@ -431,7 +446,7 @@
                 if (CYCLIC_PALETTES[config.palette]) {
                     const idx = Math.floor(this.phase) % 360;
                     const c = CYCLIC_PALETTES[config.palette][idx];
-                    this.r = c.r; this.g = c.g; this.b = c.b;
+                    if (c) { this.r = c.r; this.g = c.g; this.b = c.b; }
                 } else {
                     const palette = STATIC_PALETTES[config.palette] || STATIC_PALETTES['spectrum'];
                     const t = Math.max(0, Math.min(1, (this.x / (width || 1) + this.y / (height || 1)) / 2));
@@ -656,21 +671,27 @@
         function resize() {
             width = canvas.width = Math.floor(window.innerWidth);
             height = canvas.height = Math.floor(window.innerHeight);
+            if (width === 0 || height === 0) return;
+            
             let coverageRatio = config.grainSize === 2 ? 0.15 : (config.grainSize === 3 ? 0.20 : 0.10);
             particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
+            
             if (particles.length > particleCount) particles.length = particleCount;
             else while (particles.length < particleCount) particles.push(new Particle());
+            
             cells = [];
             for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
         }
 
         function loop(timestamp) {
-            if (!width || !height) return requestAnimationFrame(loop);
+            if (width <= 0 || height <= 0) return requestAnimationFrame(loop);
+            
             const dt = Math.min(2.0, (timestamp - lastFrameTime) / 16.66); 
             lastFrameTime = timestamp;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
             ctx.fillRect(0, 0, width, height);
             cells.forEach(cell => cell.update(dt));
+            
             const imageData = ctx.getImageData(0, 0, width, height);
             const data = imageData.data;
             const gs = config.grainSize;
@@ -679,8 +700,10 @@
                 const p = particles[i];
                 for (let j = 0; j < cells.length; j++) cells[j].applyForce(p, dt);
                 p.update(dt);
+                
                 let lumaFactor = config.velocityLuma ? Math.min(1.0, Math.sqrt(p.vx * p.vx + p.vy * p.vy) / 12.0) : 1.0;
                 const px = Math.floor(p.x); const py = Math.floor(p.y);
+                
                 for (let gy = 0; gy < gs; gy++) {
                     const py_off = py + gy;
                     if (py_off < 0 || py_off >= height) continue;
@@ -699,6 +722,7 @@
         document.getElementById('btn-soft').onclick = () => { config.hardEdges = false; document.getElementById('btn-soft').classList.add('active'); document.getElementById('btn-hard').classList.remove('active'); saveState(); };
         document.getElementById('btn-hard').onclick = () => { config.hardEdges = true; document.getElementById('btn-hard').classList.add('active'); document.getElementById('btn-soft').classList.remove('active'); saveState(); };
         document.getElementById('btn-velocity-luma').onclick = (e) => { config.velocityLuma = !config.velocityLuma; e.target.classList.toggle('active', config.velocityLuma); saveState(); };
+        
         canvas.onclick = (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } };
         document.getElementById('close-menu').onclick = () => menu.classList.remove('active');
         document.getElementById('toggle-all').onclick = () => {
@@ -717,8 +741,10 @@
             shuf(org); for(let i=0; i<nOrg; i++) sel.add(org[i]);
             shuf(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
             sel.forEach(idx => enabledEffects[idx] = true);
+
             if (Math.random() < 0.05) config.palette = Object.keys(CYCLIC_PALETTES)[Math.floor(Math.random() * Object.keys(CYCLIC_PALETTES).length)];
             else config.palette = Object.keys(STATIC_PALETTES)[Math.floor(Math.random() * Object.keys(STATIC_PALETTES).length)];
+            
             config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
             resize(); 
             particles.forEach(p => p.assignColor());
@@ -727,7 +753,7 @@
         };
 
         window.onresize = resize;
-        resize(); // Immediate initialization
+        resize(); 
         requestAnimationFrame(loop);
     </script>
 </body>
