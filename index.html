@@ -3,192 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>digital sand - V4.6.3</title>
+    <title>TERMINAL SAND ART - V4.7.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Pixelify Sans', sans-serif;
-            color: #00ff00;
-            user-select: none;
-        }
-        canvas {
-            display: block;
-            touch-action: none;
-            cursor: crosshair;
-        }
-        #menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            z-index: 100;
-            overflow-y: auto;
-            border: 2px solid #222;
-        }
-        #menu-overlay.active {
-            display: flex;
-        }
-        .terminal-header {
-            width: 100%;
-            max-width: 900px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 5px;
-            text-align: left;
-        }
-        .terminal-header h2 {
-            margin: 0;
-            font-size: 12px;
-            opacity: 0.6;
-            letter-spacing: 1px;
-        }
-        .settings-panel {
-            background: #050505;
-            padding: 12px;
-            border: 1px solid #222;
-            margin-bottom: 15px;
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .setting-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .setting-label {
-            font-size: 8px;
-            color: #00ff00;
-            opacity: 0.5;
-            text-transform: uppercase;
-        }
-        .controls {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
-            width: 100%;
-            max-width: 900px;
-        }
-        .btn {
-            background: transparent;
-            border: 1px solid #00ff00;
-            color: #00ff00;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-family: 'Pixelify Sans', sans-serif;
-            font-size: 9px;
-            transition: all 0.1s;
-            text-transform: uppercase;
-        }
-        .btn:hover { background: #00ff00; color: #000; }
-        .btn.active { background: #00ff00; color: #000; }
+        :root { --accent: #00ff00; --bg: #000; --panel-bg: #050505; --border: #222; --text-muted: #666; }
+        body { margin: 0; overflow: hidden; background-color: var(--bg); display: flex; justify-content: center; align-items: center; font-family: 'Pixelify Sans', sans-serif; color: var(--accent); user-select: none; }
+        canvas { display: block; touch-action: none; cursor: crosshair; }
         
-        details {
-            width: 100%;
-            max-width: 900px;
-            border: 1px solid #1a1a1a;
-            margin-bottom: 4px;
-            background: #080808;
-        }
-        summary {
-            padding: 8px;
-            cursor: pointer;
-            font-size: 10px;
-            list-style: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        details[open] summary {
-            border-bottom: 1px solid #222;
-            color: #fff;
-        }
-        .effect-category-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 8px;
-            padding: 10px;
-        }
-
-        .effect-item-wrapper {
-            background: #0c0c0c;
-            border: 1px solid #1a1a1a;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .effect-row-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .effect-name { font-size: 9px; color: #444; }
-        .active-text { color: #00ff00 !important; }
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 3px;
-            background: #1a1a1a;
-            outline: none;
-            cursor: pointer;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 10px;
-            height: 10px;
-            background: #00ff00;
-            border: 1px solid #000;
-        }
-        .strength-label {
-            font-size: 8px;
-            color: #333;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .palette-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
-            width: 100%;
-        }
-        .palette-container .btn {
-            font-size: 8px;
-            padding: 3px 1px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        #save-indicator {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            font-size: 8px;
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
-        }
-
+        #menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); display: none; flex-direction: column; align-items: center; padding: 20px; z-index: 100; overflow-y: auto; border: 2px solid var(--border); }
+        #menu-overlay.active { display: flex; }
+        
+        .terminal-header { width: 100%; max-width: 900px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .terminal-header h2 { margin: 0; font-size: 12px; opacity: 0.6; letter-spacing: 1px; }
+        
+        .settings-panel { background: var(--panel-bg); padding: 12px; border: 1px solid var(--border); margin-bottom: 15px; width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 10px; }
+        .setting-group { display: flex; flex-direction: column; gap: 6px; }
+        .setting-label { font-size: 8px; color: var(--accent); opacity: 0.5; text-transform: uppercase; }
+        
+        .controls { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 900px; }
+        .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 5px 10px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 9px; transition: all 0.1s; text-transform: uppercase; }
+        .btn:hover, .btn.active { background: var(--accent); color: var(--bg); }
+        
+        details { width: 100%; max-width: 900px; border: 1px solid #1a1a1a; margin-bottom: 4px; background: #080808; }
+        summary { padding: 8px; cursor: pointer; font-size: 10px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        details[open] summary { border-bottom: 1px solid var(--border); color: #fff; }
+        
+        .effect-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; padding: 10px; }
+        .effect-card { background: #0c0c0c; border: 1px solid #1a1a1a; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+        .effect-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .effect-name { font-size: 9px; color: var(--text-muted); }
+        .active-text { color: var(--accent) !important; }
+        
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 3px; background: #1a1a1a; outline: none; cursor: pointer; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--accent); border: 1px solid var(--bg); }
+        .strength-label { font-size: 8px; color: #333; display: flex; justify-content: space-between; }
+        
+        .palette-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; width: 100%; }
+        .palette-grid .btn { font-size: 8px; padding: 3px 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        #save-indicator { position: fixed; bottom: 10px; right: 10px; font-size: 8px; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
         ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-thumb { background: #222; }
+        ::-webkit-scrollbar-thumb { background: var(--border); }
     </style>
 </head>
 <body>
@@ -197,16 +52,14 @@
     <div id="save-indicator">>> SYNC_SUCCESS</div>
 
     <div id="menu-overlay">
-        <div class="terminal-header">
-            <h2>V4.6.3</h2>
-        </div>
+        <div class="terminal-header"><h2>V4.7.1 (REFACTORED)</h2></div>
 
         <div class="settings-panel">
             <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                 <div class="setting-group">
                     <span class="setting-label">FIELD_FALLOFF</span>
                     <div style="display: flex; gap: 5px;">
-                        <button class="btn active" id="btn-soft">[ SOFT ]</button>
+                        <button class="btn" id="btn-soft">[ SOFT ]</button>
                         <button class="btn" id="btn-hard">[ HARD ]</button>
                     </div>
                 </div>
@@ -219,7 +72,7 @@
             </div>
             <div class="setting-group">
                 <span class="setting-label">COLOR_MAP (5-COL_GRID)</span>
-                <div class="palette-container" id="palette-list"></div>
+                <div class="palette-grid" id="palette-list"></div>
             </div>
         </div>
 
@@ -229,21 +82,9 @@
             <button class="btn" id="close-menu">[ RESUME ]</button>
         </div>
         
-        <details>
-            <summary><span>[ ORGANIC ]</span><span>+</span></summary>
-            <div class="effect-category-content" id="cat-organic"></div>
-        </details>
-
-        <details>
-            <summary><span>[ FLUID ]</span><span>+</span></summary>
-            <div class="effect-category-content" id="cat-fluid"></div>
-        </details>
-
-        <details>
-            <summary><span>[ CHROMA ]</span><span>+</span></summary>
-            <div class="effect-category-content" id="cat-chroma"></div>
-        </details>
-        
+        <details><summary><span>[ ORGANIC ]</span><span>+</span></summary><div class="effect-grid" id="cat-organic"></div></details>
+        <details><summary><span>[ FLUID ]</span><span>+</span></summary><div class="effect-grid" id="cat-fluid"></div></details>
+        <details><summary><span>[ CHROMA ]</span><span>+</span></summary><div class="effect-grid" id="cat-chroma"></div></details>
         <div style="height: 60px;"></div>
     </div>
 
@@ -252,517 +93,500 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        let lastFrameTime = performance.now();
-
-        const hasFirebase = typeof __firebase_config !== 'undefined';
-        const firebaseConfig = hasFirebase ? JSON.parse(__firebase_config) : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'standalone-sand-art';
-
-        let db = null;
-        let auth = null;
-        let user = null;
-
-        if (hasFirebase) {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            const initAuth = async () => {
-                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                if (token) await signInWithCustomToken(auth, token);
-                else await signInAnonymously(auth);
-            };
-            onAuthStateChanged(auth, (u) => {
-                user = u;
-                if (user) loadState();
-            });
-            initAuth();
-        }
-
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d', { alpha: false });
-        const menu = document.getElementById('menu-overlay');
-
-        let width = 0, height = 0;
-        let particles = [];
-        let cells = [];
-        let particleCount = 0; 
-        const CELL_COUNT = 5; 
-        const FRICTION = 0.94; 
-        const BASE_SPEED = 0.5;
-        const MAX_PARTICLES = 180000; // Increased cap to support 50% density boost
-
-        const EFFECT_NAMES = [
-            "Lorenz Attractor", "Galaxy Spiral", "Wind Gusts", "Ripples", "Hex Grid [O]", 
-            "Diamond Lattice [O]", "Vortex", "Divergence", "Convergence", "Shear",
-            "Radial Comb", "Cross Wind", "Vertical Gusts", "Orbitals", "Square Wave", 
-            "Bubble Repulsion", "Chaos Mix", "Warp Drive", "Mirror Center", "Crystallize [O]",
-            "Turbulent Flow", "Sine Sieve", "Expansion Pulse", "Tangent Twist", "DNA Spiral",
-            "Perlin Drift", "Concentric Spin", "Zoom Out", "Magnetic North", "Maze Runner",
-            "Concentric Squares [O]", "Dotted Grid [O]", "Vertical Pinstripes [O]", "Diagonal Crosshatch [O]", "Honeycomb [O]",
-            "Radial Spokes [O]", "Ziggurat [O]", "Dotted Spirals [O]", "Checkerboard Push [O]", "Diamond Dot Array [O]",
-            "Fibonacci Spiral [O]", "Mandelbrot Boundary [O]", "Voronoi Cells [O]", "Hilbert Curve [O]", "Binary Tree [O]",
-            "Isometric Cube [O]", "Radar Sweep [O]", "Circuit Board [O]", "Tartan Plaid [O]", "Serendipity Dots [O]", 
-            "Weave Lattice [O]", "Luma Attraction [C]", "RGB Spectral Drift [C]", "Chrome Saturation Sort [C]", 
-            "Red/Blue Divergence [C]", "Green Channel Sieve [C]", "Color Gradient Snap [C]", "Hue Orbital Ring [C]", 
-            "Inverse Luma Push [C]", "Warm/Cool Shear [C]", "Luma Staircase [C]", "RGB Corner Sort [C]", 
-            "Saturation Barrier [C]", "Hue Angular Mapper [C]", "Primary Spin [C]", "Intensity Well [C]", 
-            "CMY Divergence [C]", "Chromatic Wave [C]", "Color Grid Snap [C]"
-        ];
-
-        let config = {
-            hardEdges: false,
-            velocityLuma: false,
-            palette: 'cycle_rainbow', 
-            grainSize: 1 
+        // ==========================================
+        // 1. CONSTANTS & CONFIGURATION
+        // ==========================================
+        const CONSTANTS = {
+            CELL_COUNT: 5,
+            FRICTION: 0.94,
+            BASE_SPEED: 0.5,
+            MAX_PARTICLES: 315000,
+            COVERAGE_RATIO: 0.2625,
+            MS_PER_FRAME: 16.66
         };
 
-        let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
-        
-        let effectStrengths = [
-            100, 28, 200, 200, 200, // 0-4
-            200, 200, 7, 100, 100,  // 5-9
-            100, 100, 100, 100, 100, // 10-14
-            100, 200, 5, 200, 200,  // 15-19
-            8, 9, 23, 24, 56,       // 20-24
-            123, 164, 200, 51, 200, // 25-29
-            200, 200, 200, 200, 100, // 30-34
-            200, 200, 5, 100, 200,  // 35-39
-            1, 200, 5, 200, 200,    // 40-44
-            5, 200, 100, 200, 34,   // 45-49
-            200, 7, 133, 100, 14,   // 50-54
-            44, 200, 200, 22, 200,  // 55-59
-            16, 9, 8, 7, 200,       // 60-64
-            32, 14, 200, 200        // 65-68
+        const EFFECTS = [
+            "Lorenz Attractor", "Galaxy Spiral", "Wind Gusts", "Ripples", "Hex Grid [O]", "Diamond Lattice [O]", 
+            "Vortex", "Divergence", "Convergence", "Shear", "Radial Comb", "Cross Wind", "Vertical Gusts", 
+            "Orbitals", "Square Wave", "Bubble Repulsion", "Chaos Mix", "Warp Drive", "Mirror Center", 
+            "Crystallize [O]", "Turbulent Flow", "Sine Sieve", "Expansion Pulse", "Tangent Twist", "DNA Spiral",
+            "Perlin Drift", "Concentric Spin", "Zoom Out", "Magnetic North", "Maze Runner", "Concentric Squares [O]", 
+            "Dotted Grid [O]", "Vertical Pinstripes [O]", "Diagonal Crosshatch [O]", "Honeycomb [O]", "Radial Spokes [O]", 
+            "Ziggurat [O]", "Dotted Spirals [O]", "Checkerboard Push [O]", "Diamond Dot Array [O]", "Fibonacci Spiral [O]", 
+            "Mandelbrot Boundary [O]", "Voronoi Cells [O]", "Hilbert Curve [O]", "Binary Tree [O]", "Isometric Cube [O]", 
+            "Radar Sweep [O]", "Circuit Board [O]", "Tartan Plaid [O]", "Serendipity Dots [O]", "Weave Lattice [O]", 
+            "Luma Attraction [C]", "RGB Spectral Drift [C]", "Chrome Saturation Sort [C]", "Red/Blue Divergence [C]", 
+            "Green Channel Sieve [C]", "Color Gradient Snap [C]", "Hue Orbital Ring [C]", "Inverse Luma Push [C]", 
+            "Warm/Cool Shear [C]", "Luma Staircase [C]", "RGB Corner Sort [C]", "Saturation Barrier [C]", 
+            "Hue Angular Mapper [C]", "Primary Spin [C]", "Intensity Well [C]", "CMY Divergence [C]", 
+            "Chromatic Wave [C]", "Color Grid Snap [C]"
         ];
 
-        async function saveState() {
-            const data = { config, enabledEffects, effectStrengths, timestamp: Date.now() };
+        // Telemetry calibration values
+        const DEFAULT_STRENGTHS = [
+            100, 28, 200, 200, 200, 200, 200, 7, 100, 100, 100, 100, 100, 100, 100, 100, 200, 5, 200, 200, 
+            8, 9, 23, 24, 56, 123, 164, 200, 51, 200, 200, 200, 200, 200, 100, 200, 200, 5, 100, 200, 
+            1, 200, 5, 200, 200, 5, 200, 100, 200, 34, 200, 7, 133, 100, 14, 44, 200, 200, 22, 200, 
+            16, 9, 8, 7, 200, 32, 14, 200, 200
+        ];
+
+        const PALETTE_DEFS = {
+            cyclic: {
+                rainbow: [{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}],
+                strobe: [{r:0,g:0,b:0},{r:85,g:85,b:85},{r:170,g:170,b:170},{r:255,g:255,b:255}],
+                toxic: [{r:173,g:255,b:47},{r:255,g:255,b:0},{r:50,g:205,b:50}],
+                abyss: [{r:0,g:10,b:30},{r:0,g:255,b:255},{r:0,g:100,b:150}],
+                glitch: [{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:255}],
+                forest: [{r:0,g:40,b:10},{r:34,g:139,b:34},{r:107,g:142,b:35}],
+                volcano: [{r:40,g:0,b:0},{r:255,g:69,b:0},{r:255,g:215,b:0}],
+                nebula: [{r:75,g:0,b:130},{r:199,g:21,b:133},{r:0,g:0,b:139}],
+                gold: [{r:101,g:67,b:33},{r:255,g:215,b:0},{r:255,g:255,b:200}],
+                ghost: [{r:255,g:255,b:255},{r:176,g:196,b:222},{r:72,g:61,b:139}],
+                plasma: [{r:148,g:0,b:211},{r:75,g:0,b:130},{r:255,g:0,b:255}],
+                seafoam: [{r:64,g:224,b:208},{r:127,g:255,b:212},{r:0,g:128,b:128}]
+            },
+            static: {
+                spectrum: [{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}],
+                neon: [{r:255,g:0,b:128},{r:0,g:255,b:255},{r:128,g:0,b:255},{r:255,g:255,b:255}],
+                sunset: [{r:255,g:50,b:0},{r:255,g:200,b:0},{r:100,g:0,b:150},{r:255,g:255,b:200}],
+                deepsea: [{r:0,g:20,b:50},{r:0,g:255,b:150},{r:0,g:100,b:255},{r:200,g:255,b:255}],
+                sand: [{r:230,g:204,b:178},{r:221,g:184,b:146},{r:176,g:137,b:104},{r:127,g:85,b:57},{r:254,g:250,b:224}],
+                matrix: [{r:0,g:40,b:0},{r:0,g:255,b:70},{r:20,g:100,b:20},{r:0,g:255,b:0}],
+                cyber: [{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:0},{r:255,g:0,b:100}],
+                magma: [{r:40,g:0,b:0},{r:255,g:0,b:0},{r:255,g:120,b:0},{r:255,g:255,b:0}],
+                frost: [{r:0,g:50,b:100},{r:100,g:200,b:255},{r:200,g:255,b:255},{r:255,g:255,b:255}],
+                forest: [{r:0,g:20,b:10},{r:34,g:139,b:34},{r:107,g:142,b:35},{r:210,g:180,b:140}],
+                vapor: [{r:255,g:113,b:206},{r:1,g:205,b:254},{r:5,g:255,b:161},{r:185,g:103,b:255},{r:255,g:251,b:150}],
+                royal: [{r:75,g:0,b:130},{r:255,g:215,b:0},{r:139,g:0,b:139},{r:218,g:165,b:32}],
+                autumn: [{r:139,g:69,b:19},{r:210,g:105,b:30},{r:255,g:140,b:0},{r:255,g:69,b:0}],
+                toxic: [{r:173,g:255,b:47},{r:148,g:0,b:211},{r:50,g:205,b:50},{r:139,g:0,b:139}],
+                berry: [{r:0,g:0,b:139},{r:220,g:20,b:60},{r:199,g:21,b:133},{r:75,g:0,b:130}],
+                midnight: [{r:25,g:25,b:112},{r:0,g:0,b:205},{r:72,g:61,b:139},{r:176,g:196,b:222}],
+                coral: [{r:255,g:127,b:80},{r:64,g:224,b:208},{r:255,g:99,b:71},{r:127,g:255,b:212}],
+                synth: [{r:36,g:0,b:70},{r:90,g:24,b:154},{r:157,g:78,b:221},{r:255,g:0,b:110}],
+                pastel: [{r:255,g:179,b:186},{r:255,g:255,b:186},{r:186,g:255,b:201},{r:186,g:225,b:255}],
+                monogold: [{r:101,g:67,b:33},{r:255,g:215,b:0},{r:218,g:165,b:32},{r:255,g:255,b:150}]
+            }
+        };
+
+        // ==========================================
+        // 2. STATE MANAGEMENT
+        // ==========================================
+        const AppState = {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            particleData: null,
+            particleCount: 0,
+            cells: [],
+            lastFrameTime: performance.now(),
+            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow', grainSize: 1 },
+            enabledEffects: new Array(EFFECTS.length).fill(true),
+            effectStrengths: [...DEFAULT_STRENGTHS]
+        };
+
+        // ==========================================
+        // 3. UTILITIES & PRE-COMPUTATION
+        // ==========================================
+        const $ = id => document.getElementById(id);
+        const el = (tag, props = {}) => Object.assign(document.createElement(tag), props);
+        const shuffle = arr => arr.sort(() => Math.random() - 0.5);
+
+        const PALETTE_LUTS = {};
+        const lerpColor = (c1, c2, t) => ({
+            r: c1.r + (c2.r - c1.r) * t | 0,
+            g: c1.g + (c2.g - c1.g) * t | 0,
+            b: c1.b + (c2.b - c1.b) * t | 0
+        });
+
+        function buildLUTs() {
+            const createLUT = (stops, isCyclic) => {
+                const lut = new Uint32Array(360);
+                for (let i = 0; i < 360; i++) {
+                    const t = isCyclic ? (i / 360) * stops.length : (i / 359) * (stops.length - 1);
+                    const idx1 = Math.floor(t) % stops.length;
+                    const idx2 = isCyclic ? (idx1 + 1) % stops.length : Math.min(idx1 + 1, stops.length - 1);
+                    const c = lerpColor(stops[idx1], stops[idx2], t % 1);
+                    lut[i] = (255 << 24) | (c.b << 16) | (c.g << 8) | c.r; // ABGR format
+                }
+                return lut;
+            };
+            Object.entries(PALETTE_DEFS.cyclic).forEach(([k, stops]) => PALETTE_LUTS[`cycle_${k}`] = createLUT(stops, true));
+            Object.entries(PALETTE_DEFS.static).forEach(([k, stops]) => PALETTE_LUTS[k] = createLUT(stops, false));
+        }
+        buildLUTs();
+
+        // ==========================================
+        // 4. PERSISTENCE LAYER (Firebase + LocalStorage)
+        // ==========================================
+        const FIREBASE_CONFIG = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'standalone-sand-art';
+        let db = null, user = null;
+
+        if (FIREBASE_CONFIG) {
+            const fApp = initializeApp(FIREBASE_CONFIG);
+            const auth = getAuth(fApp);
+            db = getFirestore(fApp);
+            onAuthStateChanged(auth, u => { user = u; if (u) syncLoad(); });
+            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+            if (token) signInWithCustomToken(auth, token); else signInAnonymously(auth);
+        } else {
+            setTimeout(syncLoad, 50); // Fallback init
+        }
+
+        async function syncSave() {
+            const data = { config: AppState.config, enabledEffects: AppState.enabledEffects, effectStrengths: AppState.effectStrengths, timestamp: Date.now() };
             try { localStorage.setItem('sand_art_state', JSON.stringify(data)); } catch(e) {}
             if (db && user) {
-                try {
-                    const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
-                    await setDoc(stateRef, data);
-                } catch (err) { console.warn("Cloud sync disabled."); }
+                try { await setDoc(doc(db, 'artifacts', APP_ID, 'users', user.uid, 'settings', 'current'), data); } 
+                catch (e) { console.warn("Cloud sync disabled."); }
             }
-            const ind = document.getElementById('save-indicator');
+            const ind = $('save-indicator');
             if (ind) { ind.style.opacity = 1; setTimeout(() => ind.style.opacity = 0, 2000); }
         }
 
-        async function loadState() {
+        async function syncLoad() {
             let data = null;
             if (db && user) {
                 try {
-                    const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
-                    const snap = await getDoc(stateRef);
+                    const snap = await getDoc(doc(db, 'artifacts', APP_ID, 'users', user.uid, 'settings', 'current'));
                     if (snap.exists()) data = snap.data();
                 } catch(e) {}
             }
             if (!data) {
-                try {
-                    const local = localStorage.getItem('sand_art_state');
-                    if (local) data = JSON.parse(local);
-                } catch(e) {}
+                try { const local = localStorage.getItem('sand_art_state'); if (local) data = JSON.parse(local); } catch(e) {}
             }
             if (data) {
-                Object.assign(config, data.config);
-                if (data.enabledEffects) enabledEffects = data.enabledEffects;
-                if (data.effectStrengths) effectStrengths = data.effectStrengths;
+                Object.assign(AppState.config, data.config);
+                if (data.enabledEffects) AppState.enabledEffects = data.enabledEffects;
+                if (data.effectStrengths) AppState.effectStrengths = data.effectStrengths;
             }
-            document.getElementById('btn-soft').classList.toggle('active', !config.hardEdges);
-            document.getElementById('btn-hard').classList.toggle('active', config.hardEdges);
-            document.getElementById('btn-velocity-luma').classList.toggle('active', config.velocityLuma);
-            resize();
-            buildMenu();
+            updateUIToggles();
+            resizeEngine();
+            buildMenuDOM();
         }
 
-        if (!hasFirebase) { setTimeout(loadState, 50); }
+        // ==========================================
+        // 5. UI & DOM MANAGEMENT
+        // ==========================================
+        const canvas = $('canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const menu = $('menu-overlay');
 
-        function lerpColor(c1, c2, t) {
-            return {
-                r: Math.round(c1.r + (c2.r - c1.r) * t),
-                g: Math.round(c1.g + (c2.g - c1.g) * t),
-                b: Math.round(c1.b + (c2.b - c1.b) * t)
+        function updateUIToggles() {
+            $('btn-soft').classList.toggle('active', !AppState.config.hardEdges);
+            $('btn-hard').classList.toggle('active', AppState.config.hardEdges);
+            $('btn-velocity-luma').classList.toggle('active', AppState.config.velocityLuma);
+        }
+
+        function buildMenuDOM() {
+            const containers = { '[O]': $('cat-organic'), '[C]': $('cat-chroma'), 'default': $('cat-fluid') };
+            Object.values(containers).forEach(c => c.innerHTML = '');
+
+            EFFECTS.forEach((name, idx) => {
+                const wrapper = el('div', { className: 'effect-item-wrapper' });
+                const topRow = el('div', { className: 'effect-row-top' });
+                const label = el('span', { className: `effect-name ${AppState.enabledEffects[idx] ? 'active-text' : ''}`, innerText: name });
+                
+                const checkbox = el('input', { type: 'checkbox', checked: AppState.enabledEffects[idx] });
+                checkbox.onchange = e => {
+                    AppState.enabledEffects[idx] = e.target.checked;
+                    label.classList.toggle('active-text', e.target.checked);
+                    syncSave();
+                };
+                topRow.append(label, checkbox);
+
+                const slider = el('input', { type: 'range', min: '0', max: '200', value: AppState.effectStrengths[idx] });
+                const sLabel = el('div', { className: 'strength-label', innerHTML: `<span>POWER</span><span>${AppState.effectStrengths[idx]}%</span>` });
+                slider.oninput = e => {
+                    AppState.effectStrengths[idx] = parseInt(e.target.value);
+                    sLabel.innerHTML = `<span>POWER</span><span>${AppState.effectStrengths[idx]}%</span>`;
+                };
+                slider.onchange = syncSave;
+
+                wrapper.append(topRow, slider, sLabel);
+                
+                const type = name.includes('[O]') ? '[O]' : (name.includes('[C]') ? '[C]' : 'default');
+                containers[type].appendChild(wrapper);
+            });
+
+            const pList = $('palette-list');
+            pList.innerHTML = '';
+            [...Object.keys(PALETTE_DEFS.cyclic).map(k=>`cycle_${k}`), ...Object.keys(PALETTE_DEFS.static)].forEach(key => {
+                const btn = el('button', {
+                    className: `btn ${AppState.config.palette === key ? 'active' : ''}`,
+                    innerText: key.includes('cycle') ? `[ ${key.split('_')[1].toUpperCase()} ]` : key.charAt(0).toUpperCase() + key.slice(1)
+                });
+                btn.onclick = () => {
+                    document.querySelectorAll('#palette-list .btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    AppState.config.palette = key;
+                    syncSave();
+                };
+                pList.appendChild(btn);
+            });
+        }
+
+        function setupUIEvents() {
+            $('btn-soft').onclick = () => { AppState.config.hardEdges = false; updateUIToggles(); syncSave(); };
+            $('btn-hard').onclick = () => { AppState.config.hardEdges = true; updateUIToggles(); syncSave(); };
+            $('btn-velocity-luma').onclick = () => { AppState.config.velocityLuma = !AppState.config.velocityLuma; updateUIToggles(); syncSave(); };
+            
+            canvas.onclick = e => { if (e.target === canvas) { menu.classList.add('active'); buildMenuDOM(); } };
+            $('close-menu').onclick = () => menu.classList.remove('active');
+            
+            $('toggle-all').onclick = () => {
+                const target = !AppState.enabledEffects.some(e => e); 
+                AppState.enabledEffects.fill(target); buildMenuDOM(); syncSave();
             };
+
+            $('randomise').onclick = () => {
+                AppState.enabledEffects.fill(false);
+                const getIndices = filterFn => EFFECTS.map((n, i) => filterFn(n) ? i : -1).filter(i => i !== -1);
+                
+                const org = getIndices(n => n.includes('[O]'));
+                const dyn = getIndices(n => !n.includes('[O]') && !n.includes('[C]'));
+                const chr = getIndices(n => n.includes('[C]'));
+                
+                const sel = new Set([chr[Math.floor(Math.random() * chr.length)]]);
+                shuffle(org).slice(0, Math.random() < 0.5 ? 3 : 4).forEach(i => sel.add(i));
+                shuffle(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
+                
+                sel.forEach(idx => AppState.enabledEffects[idx] = true);
+                
+                const allPals = [...Object.keys(PALETTE_DEFS.cyclic).map(k=>`cycle_${k}`), ...Object.keys(PALETTE_DEFS.static)];
+                AppState.config.palette = allPals[Math.floor(Math.random() * allPals.length)];
+                AppState.config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
+                
+                resizeEngine(); buildMenuDOM(); syncSave();
+            };
+
+            window.onresize = resizeEngine;
         }
 
-        function generateCyclicLUT(stops) {
-            const lut = [];
-            const steps = 360;
-            for (let i = 0; i < steps; i++) {
-                const t = (i / steps) * stops.length;
-                const idx1 = Math.floor(t) % stops.length;
-                const idx2 = (idx1 + 1) % stops.length;
-                lut.push(lerpColor(stops[idx1], stops[idx2], t % 1));
-            }
-            return lut;
-        }
-
-        const CYCLIC_PALETTES = {
-            cycle_rainbow: generateCyclicLUT([{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}]),
-            cycle_strobe: generateCyclicLUT([{r:0,g:0,b:0},{r:85,g:85,b:85},{r:170,g:170,b:170},{r:255,g:255,b:255}]),
-            cycle_toxic: generateCyclicLUT([{r:173,g:255,b:47},{r:255,g:255,b:0},{r:50,g:205,b:50}]),
-            cycle_abyss: generateCyclicLUT([{r:0,g:10,b:30},{r:0,g:255,b:255},{r:0,g:100,b:150}]),
-            cycle_glitch: generateCyclicLUT([{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:255}]),
-            cycle_forest: generateCyclicLUT([{r:0,g:40,b:10},{r:34,g:139,b:34},{r:107,g:142,b:35}]),
-            cycle_volcano: generateCyclicLUT([{r:40,g:0,b:0},{r:255,g:69,b:0},{r:255,g:215,b:0}]),
-            cycle_nebula: generateCyclicLUT([{r:75,g:0,b:130},{r:199,g:21,b:133},{r:0,g:0,b:139}]),
-            cycle_gold: generateCyclicLUT([{r:101,g:67,b:33},{r:255,g:215,b:0},{r:255,g:255,b:200}]),
-            cycle_ghost: generateCyclicLUT([{r:255,g:255,b:255},{r:176,g:196,b:222},{r:72,g:61,b:139}]),
-            cycle_plasma: generateCyclicLUT([{r:148,g:0,b:211},{r:75,g:0,b:130},{r:255,g:0,b:255}]),
-            cycle_seafoam: generateCyclicLUT([{r:64,g:224,b:208},{r:127,g:255,b:212},{r:0,g:128,b:128}])
-        };
-        
-        const STATIC_PALETTES = {
-            spectrum: [{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}],
-            neon: [{r:255,g:0,b:128},{r:0,g:255,b:255},{r:128,g:0,b:255},{r:255,g:255,b:255}],
-            sunset: [{r:255,g:50,b:0},{r:255,g:200,b:0},{r:100,g:0,b:150},{r:255,g:255,b:200}],
-            deepsea: [{r:0,g:20,b:50},{r:0,g:255,b:150},{r:0,g:100,b:255},{r:200,g:255,b:255}],
-            sand: [{r:230,g:204,b:178},{r:221,g:184,b:146},{r:176,g:137,b:104},{r:127,g:85,b:57},{r:254,g:250,b:224}],
-            matrix: [{r:0,g:40,b:0},{r:0,g:255,b:70},{r:20,g:100,b:20},{r:0,g:255,b:0}],
-            cyber: [{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:0},{r:255,g:0,b:100}],
-            magma: [{r:40,g:0,b:0},{r:255,g:0,b:0},{r:255,g:120,b:0},{r:255,g:255,b:0}],
-            frost: [{r:0,g:50,b:100},{r:100,g:200,b:255},{r:200,g:255,b:255},{r:255,g:255,b:255}],
-            forest: [{r:0,g:20,b:10},{r:34,g:139,b:34},{r:107,g:142,b:35},{r:210,g:180,b:140}],
-            vapor: [{r:255,g:113,b:206},{r:1,g:205,b:254},{r:5,g:255,b:161},{r:185,g:103,b:255},{r:255,g:251,b:150}],
-            royal: [{r:75,g:0,b:130},{r:255,g:215,b:0},{r:139,g:0,b:139},{r:218,g:165,b:32}],
-            autumn: [{r:139,g:69,b:19},{r:210,g:105,b:30},{r:255,g:140,b:0},{r:255,g:69,b:0}],
-            toxic: [{r:173,g:255,b:47},{r:148,g:0,b:211},{r:50,g:205,b:50},{r:139,g:0,b:139}],
-            berry: [{r:0,g:0,b:139},{r:220,g:20,b:60},{r:199,g:21,b:133},{r:75,g:0,b:130}],
-            midnight: [{r:25,g:25,b:112},{r:0,g:0,b:205},{r:72,g:61,b:139},{r:176,g:196,b:222}],
-            coral: [{r:255,g:127,b:80},{r:64,g:224,b:208},{r:255,g:99,b:71},{r:127,g:255,b:212}],
-            synth: [{r:36,g:0,b:70},{r:90,g:24,b:154},{r:157,g:78,b:221},{r:255,g:0,b:110}],
-            pastel: [{r:255,g:179,b:186},{r:255,g:255,b:186},{r:186,g:255,b:201},{r:186,g:225,b:255}],
-            monogold: [{r:101,g:67,b:33},{r:255,g:215,b:0},{r:218,g:165,b:32},{r:255,g:255,b:150}]
-        };
-
-        class Particle {
-            constructor() { this.init(); }
-            init() {
-                this.x = Math.random() * (width || 1);
-                this.y = Math.random() * (height || 1);
-                this.vx = 0; this.vy = 0;
-                this.phase = Math.floor(Math.random() * 360);
-                this.assignColor();
-            }
-            assignColor() {
-                const pal = CYCLIC_PALETTES[config.palette];
-                if (pal) {
-                    const idx = Math.floor(this.phase) % 360;
-                    const c = pal[idx];
-                    if (c) { this.r = c.r; this.g = c.g; this.b = c.b; }
-                } else {
-                    const palette = STATIC_PALETTES[config.palette] || STATIC_PALETTES['spectrum'];
-                    const safeW = (width || 1); const safeH = (height || 1);
-                    const t = Math.max(0, Math.min(1, (this.x / safeW + this.y / safeH) / 2));
-                    const scaledT = t * (palette.length - 1);
-                    const i = Math.floor(scaledT);
-                    const f = scaledT - i;
-                    const nextI = Math.min(i + 1, palette.length - 1);
-                    const c = lerpColor(palette[i], palette[nextI], f);
-                    this.r = c.r; this.g = c.g; this.b = c.b;
-                }
-                this.luma = (this.r + this.g + this.b) / 3;
-            }
-            update(dt) {
-                if (isNaN(this.x) || isNaN(this.y)) this.init();
-                this.x += this.vx * BASE_SPEED * dt;
-                this.y += this.vy * BASE_SPEED * dt;
-                const f = Math.pow(FRICTION, dt);
-                this.vx *= f; this.vy *= f;
-                if (CYCLIC_PALETTES[config.palette]) {
-                    let cycleSpeed = config.palette === 'cycle_strobe' ? 15.0 : 1.0;
-                    this.phase = (this.phase + cycleSpeed * dt) % 360;
-                    const c = CYCLIC_PALETTES[config.palette][Math.floor(this.phase) % 360];
-                    if (c) { this.r = c.r; this.g = c.g; this.b = c.b; this.luma = (this.r + this.g + this.b) / 3; }
-                }
-                if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
-                if (this.y < 0) this.y += height; else if (this.y >= height) this.y -= height;
-            }
-        }
-
+        // ==========================================
+        // 6. PHYSICS & SIMULATION ENGINE
+        // ==========================================
         class Cell {
             constructor(id) {
-                this.id = id; this.x = Math.random() * (width || 1);
-                this.y = Math.random() * (height || 1);
-                this.vx = 0; this.vy = 0;
-                this.targetVx = 0; this.targetVy = 0;
+                this.id = id; this.x = Math.random() * AppState.width; this.y = Math.random() * AppState.height;
+                this.vx = 0; this.vy = 0; this.targetVx = 0; this.targetVy = 0;
                 this.moveTimer = 0; this.reset();
             }
             reset() {
-                const canvasMin = Math.min(width, height) || 1;
                 const scale = 0.26 + Math.random() * 0.26;
-                this.sizeW = canvasMin * scale; this.sizeH = canvasMin * scale;
-                const validIndices = enabledEffects.map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
+                this.sizeW = this.sizeH = Math.min(AppState.width, AppState.height) * scale;
+                const validIndices = AppState.enabledEffects.map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
                 this.effectIndex = validIndices.length > 0 ? validIndices[Math.floor(Math.random() * validIndices.length)] : 0;
                 this.timer = 0; this.duration = 10000 + Math.random() * 5000;
                 this.rotation = 0; this.strengthBase = (0.6 + Math.random() * 2.4);
                 this.changeMovement();
             }
             changeMovement() {
-                const angle = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
-                const speed = (0.5 + Math.random() * 4.5);
+                const angle = Math.floor(Math.random() * 4) * (Math.PI / 2);
+                const speed = 0.5 + Math.random() * 4.5;
                 this.targetVx = Math.cos(angle) * speed; 
                 this.targetVy = Math.sin(angle) * speed;
                 this.moveTimer = 1000 + Math.random() * 2000;
             }
             update(dt) {
-                const dtMs = dt * 16.66;
-                this.timer += dtMs;
-                this.moveTimer -= dtMs;
-                if (this.timer >= this.duration || !enabledEffects[this.effectIndex]) this.reset();
+                this.timer += dt * CONSTANTS.MS_PER_FRAME;
+                this.moveTimer -= dt * CONSTANTS.MS_PER_FRAME;
+                if (this.timer >= this.duration || !AppState.enabledEffects[this.effectIndex]) this.reset();
                 else if (this.moveTimer <= 0) this.changeMovement();
+                
                 const inertiaEase = 1 - Math.pow(0.96, dt); 
                 this.vx += (this.targetVx - this.vx) * inertiaEase;
                 this.vy += (this.targetVy - this.vy) * inertiaEase;
                 this.x += this.vx * dt; this.y += this.vy * dt;
                 this.rotation += 0.015 * dt;
-                if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
-                if (this.y < 0) this.y += height; else if (this.y >= height) this.y -= height;
+                
+                if (this.x < 0) this.x += AppState.width; else if (this.x >= AppState.width) this.x -= AppState.width;
+                if (this.y < 0) this.y += AppState.height; else if (this.y >= AppState.height) this.y -= AppState.height;
             }
-            applyForce(p, dt) {
-                if (!enabledEffects[this.effectIndex]) return;
-                let dx = p.x - this.x; let dy = p.y - this.y;
-                if (dx > width / 2) dx -= width; else if (dx < -width / 2) dx += width;
-                if (dy > height / 2) dy -= height; else if (dy < -height / 2) dy += height;
-                const hw = this.sizeW / 2; const hh = this.sizeH / 2;
-                if (Math.abs(dx) < hw && Math.abs(dy) < hh) {
-                    const normX = dx / hw; const normY = dy / hh;
-                    const t = Math.max(Math.abs(normX), Math.abs(normY));
-                    const inverseT = Math.max(0, 1 - t);
-                    const edgeForce = config.hardEdges ? (inverseT > 0.02 ? 1 : 0) : (inverseT * inverseT * (3 - 2 * inverseT));
-                    const userMult = (effectStrengths[this.effectIndex] / 100);
-                    const s = this.strengthBase * edgeForce * dt * userMult;
-                    const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
-                    switch(this.effectIndex) {
-                        case 0: const lz = Math.sin(this.rotation)*10+20; p.vx += (10*(normY*10-normX*10))*s*0.05; p.vy += (normX*10*(28-lz)-normY*10)*s*0.05; break;
-                        case 1: p.vx += Math.cos(angle+1.5+this.rotation)*s*4; p.vy += Math.sin(angle+1.5+this.rotation)*s*4; break;
-                        case 2: p.vx += Math.sin(p.y*0.01+this.rotation*5)*s*6; break;
-                        case 3: p.vx += Math.cos(angle)*Math.sin(dist*0.1-this.rotation*10)*s*3; p.vy += Math.sin(angle)*Math.sin(dist*0.1-this.rotation*10)*s*3; break;
-                        case 4: p.vx += (Math.round(p.x/30)*30-p.x)*s*0.4; p.vy += (Math.round(p.y/25)*25-p.y)*s*0.4; break;
-                        case 5: p.vx += Math.cos((Math.abs(p.x%40-20)+Math.abs(p.y%40-20)))*s*2; p.vy += Math.sin((Math.abs(p.x%40-20)+Math.abs(p.y%40-20)))*s*2; break;
-                        case 6: p.vx += Math.cos(angle+1.57)*s*4; p.vy += Math.sin(angle+1.57)*s*4; break;
-                        case 7: p.vx += Math.cos(angle)*s*5; p.vy += Math.sin(angle)*s*5; break;
-                        case 8: p.vx -= Math.cos(angle)*s*4; p.vy -= Math.sin(angle)*s*4; break;
-                        case 9: p.vx += (normY>0?1:-1)*s*5; break;
-                        case 10: if (Math.abs(Math.sin((angle+this.rotation)*8))>0.7){ p.vx += Math.cos(angle+1.57)*s*4; p.vy += Math.sin(angle+1.57)*s*4; } break;
-                        case 11: p.vx += Math.sin(this.rotation)*s*5; p.vy += Math.cos(this.rotation)*s*5; break;
-                        case 12: p.vy += Math.cos(p.x*0.02+this.rotation*3)*s*5; break;
-                        case 13: p.vx += Math.cos(angle+1.57)*Math.sin(dist*0.15-this.rotation*4)*s*5; p.vy += Math.sin(angle+1.57)*Math.sin(dist*0.15-this.rotation*4)*s*5; break;
-                        case 14: p.vx += Math.sign(Math.sin(p.y*0.1))*s*3; break;
-                        case 15: if (dist < hw/2) { p.vx += Math.cos(angle)*s*8; p.vy += Math.sin(angle)*s*8; } break;
-                        case 16: p.vx += (Math.random()-0.5)*s*10; p.vy += (Math.random()-0.5)*s*10; break;
-                        case 17: p.vx += Math.cos(angle)*(1+s*3); p.vy += Math.sin(angle)*(1+s*3); break;
-                        case 18: p.vx -= (normX*5)*s; break;
-                        case 19: p.vx += (Math.round(p.x/75)*75-p.x)*s*0.6; p.vy += (Math.round(p.y/75)*75-p.y)*s*0.6; break;
-                        case 20: p.vx += Math.sin(p.y*0.05+this.rotation*0.5)*s*3; p.vy += Math.sin(p.x*0.05-this.rotation*0.5)*s*3; break;
-                        case 21: if (Math.sin(p.x*0.1)*Math.sin(p.y*0.1)>0) p.vx += 2*s; break;
-                        case 22: p.vx += Math.cos(angle)*Math.sin(this.rotation*4)*5*s; p.vy += Math.sin(angle)*Math.sin(this.rotation*4)*5*s; break;
-                        case 23: p.vx += Math.tan(normX*0.5)*s*2; p.vy += Math.cos(normY*3)*s*3; break;
-                        case 24: p.vx += Math.sin(p.y*0.05+this.rotation*2)*s*5; break;
-                        case 25: p.vx += Math.cos(p.x*0.01+p.y*0.01+this.rotation)*s*4; p.vy += Math.sin(p.x*0.01-p.y*0.01+this.rotation)*s*4; break;
-                        case 26: p.vx += Math.cos(angle+1.57)*(Math.floor(dist/20)%2==0?1:-1)*s*4; p.vy += Math.sin(angle+1.57)*(Math.floor(dist/20)%2==0?1:-1)*s*4; break;
-                        case 27: p.vx += dx*0.05*s; p.vy += dy*0.05*s; break;
-                        case 28: p.vy -= 2*s; break;
-                        case 29: p.vx += ((Math.floor(p.x/20)+Math.floor(p.y/20))%2==0?1:-1)*s*4; break;
-                        case 30: p.vx += (Math.round(dx/25)*25-dx)*s*0.5; p.vy += (Math.round(dy/25)*25-dy)*s*0.5; break;
-                        case 31: p.vx += (Math.round(p.x/15)*15-p.x)*s*0.8; p.vy += (Math.round(p.y/15)*15-p.y)*s*0.8; break;
-                        case 32: p.vx += (Math.round(p.x/12)*12-p.x)*s*0.9; break;
-                        case 33: p.vx += ((p.x+p.y)%30<(p.x-p.y)%30?1:-1)*s*2; break;
-                        case 34: p.vx += (Math.round(p.x/100)*100-p.x)*s*0.3; p.vy += (Math.round(p.y/60)*60-p.y)*s*0.3; break;
-                        case 35: const spA = Math.round(angle*4)/4; p.vx += (Math.cos(spA)*dist-dx)*s*0.4; p.vy += (Math.sin(spA)*dist-dy)*s*0.4; break;
-                        case 36: p.vx += (Math.floor(p.x/40)*40+(p.y%40)-p.x)*s*0.5; break;
-                        case 37: const sdA = angle+dist*0.033; p.vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; p.vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break;
-                        case 38: p.vx += ((Math.floor(p.x/30)+Math.floor(p.y/30))%2==0?1:-1)*s*3; break;
-                        case 39: const dSu = Math.round((p.x+p.y)/25)*25; const dDi = Math.round((p.x-p.y)/25)*25; p.vx += ((dSu+dDi)/2-p.x)*s*0.7; p.vy += ((dSu-dDi)/2-p.y)*s*0.7; break;
-                        case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(fAng)*dist-p.x)*s*0.125; p.vy += (this.y+Math.sin(fAng)*dist-p.y)*s*0.125; break;
-                        case 41: const mx_0 = normX*1.5-0.5; const my_0 = normY*1.5; let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+mx_0; my=2*mx*my+my_0; mx=xt; mi++; } if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
-                        case 42: p.vx += (Math.floor(p.x/40)*40+20-p.x)*s*0.6; p.vy += (Math.floor(p.y/40)*40+20-p.y)*s*0.6; break;
-                        case 43: p.vx += (Math.floor(normX*8+8)+Math.floor(normY*8+8))%2==0?Math.sin(this.rotation)*s*5:-Math.sin(this.rotation)*s*5; p.vy += (Math.floor(normX*8+8)+Math.floor(normY*8+8))%2==0?Math.cos(this.rotation)*s*5:-Math.cos(this.rotation)*s*5; break;
-                        case 44: const tAng = Math.atan2(p.y-height, p.x-width/2); p.vx += Math.cos(tAng)*s*4; p.vy += Math.sin(tAng)*s*4; break;
-                        case 45: const ix = Math.round((p.x-p.y)/1.73/30)*30*1.73; const iy = Math.round((p.x+p.y)/30)*30; p.vx += (ix+iy/2-p.x)*s*0.35; p.vy += (iy/2-p.y)*s*0.35; break;
-                        case 46: if(Math.abs(angle-(this.rotation*2)%(Math.PI*2))<0.1 || Math.abs(angle-(this.rotation*2)%(Math.PI*2))>Math.PI*2-0.1){ p.vx += Math.cos(angle)*s*6; p.vy += Math.sin(angle)*s*6; } break;
-                        case 47: const cxS = Math.round(p.x/20)*20; const cyS = Math.round(p.y/20)*20; if(Math.abs(cxS-p.x)<Math.abs(cyS-p.y)) p.vx += (cxS-p.x)*s*0.9; else p.vy += (cyS-p.y)*s*0.9; break;
-                        case 48: if(p.x%45<5) p.vy += Math.sin(p.x*0.01)*s*4; if(p.y%45<5) p.vx += Math.cos(p.y*0.01)*s*4; break;
-                        case 49: const sdTX = Math.floor(this.x/50)*50+Math.cos(this.id)*hw; const sdTY = Math.floor(this.y/50)*50+Math.sin(this.id)*hh; p.vx += (sdTX-p.x)*s*0.048; p.vy += (sdTY-p.y)*s*0.048; break;
-                        case 50: p.vx += ((Math.floor(p.x/25)+Math.floor(p.y/25))%2==0?1:-1)*s*3; p.vy += -((Math.floor(p.x/25)+Math.floor(p.y/25))%2==0?1:-1)*s*3; break;
-                        case 51: p.vx += Math.cos(angle)*((p.luma/255)*6*s-3); p.vy += Math.sin(angle)*((p.luma/255)*6*s-3); break;
-                        case 52: if (p.r > p.g && p.r > p.b) p.vx -= s * 5; else if (p.g > p.r && p.g > p.b) p.vy -= s * 5; else p.vx += s * 5; break;
-                        case 53: const sAngV = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b)/255)*Math.PI*2+this.rotation; p.vx += Math.cos(sAngV)*s*5; p.vy += Math.sin(sAngV)*s*5; break;
-                        case 54: p.vx += Math.cos(angle)*(p.r > p.b ? 1 : -1)*s*6; p.vy += Math.sin(angle)*(p.r > p.b ? 1 : -1)*s*6; break;
-                        case 55: p.vx += (p.g > 150 ? Math.sin(p.y*0.1)*s*5 : -Math.sin(p.y*0.1)*s*5); break;
-                        case 56: p.vx += (Math.round(p.x/40)*40-p.x)*(p.r/255)*s*3.2; break;
-                        case 57: p.vx += Math.cos(angle+1.57)*(Math.floor(p.luma/50)%2==0?1:-1)*s*5; p.vy += Math.sin(angle+1.57)*(Math.floor(p.luma/50)%2==0?1:-1)*s*5; break;
-                        case 58: p.vx += Math.cos(angle)*(1-p.luma/255)*s*7; p.vy += Math.sin(angle)*(1-p.luma/255)*s*7; break;
-                        case 59: p.vx += ((p.r+p.g)/2 > p.b ? 1 : -1)*s*5; break;
-                        case 60: const lStp = height / 6; p.vy += (lStp * Math.floor(p.luma / 42.5) + lStp/2 - ((p.y - this.y + height/2) % height)) * s * 0.1; break;
-                        case 61: if(p.r > p.g && p.r > p.b) { p.vx += (-hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; } 
-                            else if(p.g > p.r && p.g > p.b) { p.vx += (hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; }
-                            else if(p.b > p.r && p.b > p.g) { p.vx += (-hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; } break;
-                        case 62: const sDv = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b) > 100 ? 1 : -1); p.vx += Math.cos(angle)*sDv*s*1.5; p.vy += Math.sin(angle)*sDv*s*1.5; break;
-                        case 63: const hAngM = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(hAngM)*dist - dx)*s*0.3; p.vy += (Math.sin(hAngM)*dist - dy) * s * 0.3; break;
-                        case 64: let pRotS = p.r > 200 ? 0.05 : (p.g > 200 ? -0.05 : 0.02); p.vx += Math.cos(angle + 1.57)*dist*pRotS*s; p.vy += Math.sin(angle + 1.57)*dist*pRotS*s; break;
-                        case 65: p.vx += Math.cos(angle)*(p.luma/255 > 0.5 ? -1 : 1)*s*1.25; p.vy += Math.sin(angle)*(p.luma/255 > 0.5 ? -1 : 1)*s*1.25; break;
-                        case 66: if(p.r < 100) p.vx -= s*5; else if(p.g < 100) p.vy -= s*5; else if(p.b < 100) p.vx += s*5; break;
-                        case 67: p.vx += Math.cos(angle)*Math.sin(dist*0.1 - this.rotation*(p.luma/50))*s*1; p.vy += Math.sin(angle)*Math.sin(dist*0.1 - this.rotation*(p.luma/50))*s*1; break;
-                        case 68: const cgOfs = (p.phase/360)*20; p.vx += (Math.round((p.x + cgOfs)/30)*30 - cgOfs - p.x)*s*0.6; break;
-                    }
+        }
+
+        function resizeEngine() {
+            AppState.width = canvas.width = Math.floor(window.innerWidth);
+            AppState.height = canvas.height = Math.floor(window.innerHeight);
+            if (AppState.width <= 0 || AppState.height <= 0) return;
+            
+            const grainArea = AppState.config.grainSize * AppState.config.grainSize;
+            const newCount = Math.min(CONSTANTS.MAX_PARTICLES, Math.floor((AppState.width * AppState.height * CONSTANTS.COVERAGE_RATIO) / grainArea)); 
+            
+            const oldData = AppState.particleData;
+            AppState.particleData = new Float32Array(newCount * 5); 
+            
+            for(let i=0; i<newCount; i++) {
+                const offset = i * 5;
+                if (oldData && i < AppState.particleCount) {
+                    AppState.particleData.set(oldData.subarray(offset, offset+5), offset);
+                } else {
+                    AppState.particleData[offset] = Math.random() * AppState.width;
+                    AppState.particleData[offset+1] = Math.random() * AppState.height;
+                    AppState.particleData[offset+2] = 0;
+                    AppState.particleData[offset+3] = 0;
+                    AppState.particleData[offset+4] = Math.random() * 360;
                 }
             }
+            AppState.particleCount = newCount;
+            AppState.cells = Array.from({length: CONSTANTS.CELL_COUNT}, (_, i) => new Cell(i));
         }
 
-        function buildMenu() {
-            const catOrganic = document.getElementById('cat-organic');
-            const catFluid = document.getElementById('cat-fluid');
-            const catChroma = document.getElementById('cat-chroma');
-            catOrganic.innerHTML = ''; catFluid.innerHTML = ''; catChroma.innerHTML = '';
-
-            EFFECT_NAMES.forEach((name, idx) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'effect-item-wrapper';
-                const topRow = document.createElement('div');
-                topRow.className = 'effect-row-top';
-                const label = document.createElement('span');
-                label.className = 'effect-name' + (enabledEffects[idx] ? ' active-text' : '');
-                label.innerText = name;
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = enabledEffects[idx];
-                checkbox.onchange = (e) => {
-                    enabledEffects[idx] = e.target.checked;
-                    label.classList.toggle('active-text', enabledEffects[idx]);
-                    saveState();
-                };
-                topRow.appendChild(label);
-                topRow.appendChild(checkbox);
-                const slider = document.createElement('input');
-                slider.type = 'range'; slider.min = '0'; slider.max = '200'; slider.value = effectStrengths[idx];
-                const sLabel = document.createElement('div');
-                sLabel.className = 'strength-label';
-                sLabel.innerHTML = `<span>POWER</span><span>${effectStrengths[idx]}%</span>`;
-                slider.oninput = (e) => {
-                    effectStrengths[idx] = parseInt(e.target.value);
-                    sLabel.innerHTML = `<span>POWER</span><span>${effectStrengths[idx]}%</span>`;
-                };
-                slider.onchange = () => saveState();
-                wrapper.appendChild(topRow);
-                wrapper.appendChild(slider);
-                wrapper.appendChild(sLabel);
-                if (name.includes('[O]')) catOrganic.appendChild(wrapper);
-                else if (name.includes('[C]')) catChroma.appendChild(wrapper);
-                else catFluid.appendChild(wrapper);
-            });
-
-            const pList = document.getElementById('palette-list');
-            pList.innerHTML = '';
-            const allPals = [...Object.keys(CYCLIC_PALETTES), ...Object.keys(STATIC_PALETTES)];
-            allPals.forEach(key => {
-                const btn = document.createElement('button');
-                btn.className = 'btn' + (config.palette === key ? ' active' : '');
-                btn.innerText = key.includes('cycle') ? `[ ${key.split('_')[1].toUpperCase()} ]` : key.charAt(0).toUpperCase() + key.slice(1);
-                btn.onclick = () => {
-                    document.querySelectorAll('#palette-list .btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    config.palette = key;
-                    particles.forEach(p => p.assignColor());
-                    saveState();
-                };
-                pList.appendChild(btn);
-            });
-        }
-
-        function resize() {
-            width = canvas.width = Math.floor(window.innerWidth);
-            height = canvas.height = Math.floor(window.innerHeight);
-            if (width === 0 || height === 0) return;
+        function engineLoop(timestamp) {
+            if (AppState.width <= 0 || AppState.height <= 0) return requestAnimationFrame(engineLoop);
             
-            // COVERAGE RATIOS BOOSTED 50%
-            let coverageRatio = 0.15; // 1x1: 10% -> 15%
-            if (config.grainSize === 2) coverageRatio = 0.225; // 2x2: 15% -> 22.5%
-            else if (config.grainSize === 3) coverageRatio = 0.30; // 3x3: 20% -> 30%
-            
-            particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
-            
-            if (particles.length > particleCount) particles.length = particleCount;
-            else while (particles.length < particleCount) particles.push(new Particle());
-            
-            cells = [];
-            for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
-        }
-
-        function loop(timestamp) {
-            if (width <= 0 || height <= 0) return requestAnimationFrame(loop);
-            
-            if (!lastFrameTime) lastFrameTime = timestamp;
-            const dt = Math.min(2.0, (timestamp - lastFrameTime) / 16.66); 
-            lastFrameTime = timestamp;
+            const dt = Math.min(2.0, (timestamp - AppState.lastFrameTime) / CONSTANTS.MS_PER_FRAME); 
+            AppState.lastFrameTime = timestamp;
 
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
-            ctx.fillRect(0, 0, width, height);
-            cells.forEach(cell => cell.update(dt));
+            ctx.fillRect(0, 0, AppState.width, AppState.height);
+            AppState.cells.forEach(cell => cell.update(dt));
             
-            const imageData = ctx.getImageData(0, 0, width, height);
-            const data = imageData.data;
+            const imageData = ctx.getImageData(0, 0, AppState.width, AppState.height);
+            const data32 = new Uint32Array(imageData.data.buffer);
+            
+            const { particleData, particleCount, cells, width, height, enabledEffects, effectStrengths, config } = AppState;
+            const currentPalette = PALETTE_LUTS[config.palette];
             const gs = config.grainSize;
+            const fPow = Math.pow(CONSTANTS.FRICTION, dt);
+            const isStrobe = config.palette === 'cycle_strobe';
+            const cycleSpeed = isStrobe ? 15.0 : 1.0;
+            const useLuma = config.velocityLuma;
+            const hardEdges = config.hardEdges;
+            const halfW = width / 2; const halfH = height / 2;
 
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                for (let j = 0; j < cells.length; j++) cells[j].applyForce(p, dt);
-                p.update(dt);
+            for (let i = 0; i < particleCount; i++) {
+                const idx = i * 5;
+                let px = particleData[idx]; let py = particleData[idx+1];
+                let vx = particleData[idx+2]; let vy = particleData[idx+3];
+                let phase = particleData[idx+4];
+
+                // Influence mapping
+                for (let c = 0; c < cells.length; c++) {
+                    const cell = cells[c];
+                    if (!enabledEffects[cell.effectIndex]) continue;
+                    let dx = px - cell.x; let dy = py - cell.y;
+                    if (dx > halfW) dx -= width; else if (dx < -halfW) dx += width;
+                    if (dy > halfH) dy -= height; else if (dy < -halfH) dy += height;
+                    const hw = cell.sizeW / 2; const hh = cell.sizeH / 2;
+                    
+                    if (Math.abs(dx) < hw && Math.abs(dy) < hh) {
+                        const nx = dx/hw; const ny = dy/hh;
+                        const t = Math.max(Math.abs(nx), Math.abs(ny));
+                        const edgeForce = hardEdges ? (t < 0.98 ? 1 : 0) : (1-t)*(1-t)*(3-2*(1-t));
+                        const s = cell.strengthBase * edgeForce * dt * (effectStrengths[cell.effectIndex] * 0.01);
+                        const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
+                        
+                        // Core physics registry map
+                        switch(cell.effectIndex) {
+                            case 0: vx += (10*(ny*10-nx*10))*s*0.05; break;
+                            case 1: vx += Math.cos(angle+1.5+cell.rotation)*s*4; vy += Math.sin(angle+1.5+cell.rotation)*s*4; break;
+                            case 2: vx += Math.sin(py*0.01+cell.rotation*5)*s*6; break;
+                            case 3: vx += Math.cos(angle)*Math.sin(dist*0.1-cell.rotation*10)*s*3; vy += Math.sin(angle)*Math.sin(dist*0.1-cell.rotation*10)*s*3; break;
+                            case 4: vx += (Math.round(px/30)*30-px)*s*0.4; vy += (Math.round(py/25)*25-py)*s*0.4; break;
+                            case 5: vx += Math.cos((Math.abs(px%40-20)+Math.abs(py%40-20)))*s*2; break;
+                            case 6: vx += Math.cos(angle+1.57)*s*4; vy += Math.sin(angle+1.57)*s*4; break;
+                            case 7: vx += Math.cos(angle)*s*5; vy += Math.sin(angle)*s*5; break;
+                            case 8: vx -= Math.cos(angle)*s*4; vy -= Math.sin(angle)*s*4; break;
+                            case 9: vx += (ny>0?1:-1)*s*5; break;
+                            case 10: if (Math.abs(Math.sin((angle+cell.rotation)*8))>0.7){ vx += Math.cos(angle+1.57)*s*4; vy += Math.sin(angle+1.57)*s*4; } break;
+                            case 11: vx += Math.sin(cell.rotation)*s*5; vy += Math.cos(cell.rotation)*s*5; break;
+                            case 12: vy += Math.cos(px*0.02+cell.rotation*3)*s*5; break;
+                            case 13: vx += Math.cos(angle+1.57)*Math.sin(dist*0.15-cell.rotation*4)*s*5; vy += Math.sin(angle+1.57)*Math.sin(dist*0.15-cell.rotation*4)*s*5; break;
+                            case 14: vx += Math.sign(Math.sin(py*0.1))*s*3; break;
+                            case 15: if (dist < hw/2) { vx += Math.cos(angle)*s*8; vy += Math.sin(angle)*s*8; } break;
+                            case 16: vx += (Math.random()-0.5)*s*10; vy += (Math.random()-0.5)*s*10; break;
+                            case 17: vx += Math.cos(angle)*(1+s*3); vy += Math.sin(angle)*(1+s*3); break;
+                            case 18: vx -= (nx*5)*s; break;
+                            case 19: vx += (Math.round(px/75)*75-px)*s*0.6; vy += (Math.round(py/75)*75-py)*s*0.6; break;
+                            case 20: vx += Math.sin(py*0.05+cell.rotation*0.5)*s*3; vy += Math.sin(px*0.05-cell.rotation*0.5)*s*3; break;
+                            case 21: if (Math.sin(px*0.1)*Math.sin(py*0.1)>0) vx += 2*s; break;
+                            case 22: vx += Math.cos(angle)*Math.sin(cell.rotation*4)*5*s; vy += Math.sin(angle)*Math.sin(cell.rotation*4)*5*s; break;
+                            case 23: vx += Math.tan(nx*0.5)*s*2; vy += Math.cos(ny*3)*s*3; break;
+                            case 24: vx += Math.sin(py*0.05+cell.rotation*2)*s*5; break;
+                            case 25: vx += Math.cos(px*0.01+py*0.01+cell.rotation)*s*4; vy += Math.sin(px*0.01-py*0.01+cell.rotation)*s*4; break;
+                            case 26: vx += Math.cos(angle+1.57)*(Math.floor(dist/20)%2==0?1:-1)*s*4; vy += Math.sin(angle+1.57)*(Math.floor(dist/20)%2==0?1:-1)*s*4; break;
+                            case 27: vx += dx*0.05*s; vy += dy*0.05*s; break;
+                            case 28: vy -= 2*s; break;
+                            case 29: vx += ((Math.floor(px/20)+Math.floor(py/20))%2==0?1:-1)*s*4; break;
+                            case 30: vx += (Math.round(dx/25)*25-dx)*s*0.5; vy += (Math.round(dy/25)*25-dy)*s*0.5; break;
+                            case 31: vx += (Math.round(px/15)*15-px)*s*0.8; vy += (Math.round(py/15)*15-py)*s*0.8; break;
+                            case 32: vx += (Math.round(px/12)*12-px)*s*0.9; break;
+                            case 33: vx += ((px+py)%30<(px-py)%30?1:-1)*s*2; break;
+                            case 34: vx += (Math.round(px/100)*100-px)*s*0.3; vy += (Math.round(py/60)*60-py)*s*0.3; break;
+                            case 35: const spA = Math.round(angle*4)/4; vx += (Math.cos(spA)*dist-dx)*s*0.4; vy += (Math.sin(spA)*dist-dy)*s*0.4; break;
+                            case 36: vx += (Math.floor(px/40)*40+(py%40)-px)*s*0.5; break;
+                            case 37: const sdA = angle+dist*0.033; vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break;
+                            case 38: vx += ((Math.floor(px/30)+Math.floor(py/30))%2==0?1:-1)*s*3; break;
+                            case 39: const dSu = Math.round((px+py)/25)*25; const dDi = Math.round((px-py)/25)*25; vx += ((dSu+dDi)/2-px)*s*0.7; vy += ((dSu-dDi)/2-py)*s*0.7; break;
+                            case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+cell.rotation; vx += (cell.x+Math.cos(fAng)*dist-px)*s*0.125; vy += (cell.y+Math.sin(fAng)*dist-py)*s*0.125; break;
+                            case 41: const mX = nx*1.5-0.5; const mY = ny*1.5; let tx=0, ty=0, mi=0; while(tx*tx+ty*ty<=4 && mi < 8){ const xt=tx*tx-ty*ty+mX; ty=2*tx*ty+mY; tx=xt; mi++; } if(mi < 8){ vx += Math.cos(angle)*s*6; vy += Math.sin(angle)*s*6;} break;
+                            case 42: vx += (Math.floor(px/40)*40+20-px)*s*0.6; vy += (Math.floor(py/40)*40+20-py)*s*0.6; break;
+                            case 43: vx += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.sin(cell.rotation)*s*5:-Math.sin(cell.rotation)*s*5; vy += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.cos(cell.rotation)*s*5:-Math.cos(cell.rotation)*s*5; break;
+                            case 44: const tAng = Math.atan2(py-height, px-width/2); vx += Math.cos(tAng)*s*4; vy += Math.sin(tAng)*s*4; break;
+                            case 45: const ix = Math.round((px-py)/1.73/30)*30*1.73; const iy = Math.round((px+py)/30)*30; vx += (ix+iy/2-px)*s*0.35; vy += (iy/2-py)*s*0.35; break;
+                            case 46: if(Math.abs(angle-(cell.rotation*2)%(Math.PI*2))<0.1 || Math.abs(angle-(cell.rotation*2)%(Math.PI*2))>Math.PI*2-0.1){ vx += Math.cos(angle)*s*6; vy += Math.sin(angle)*s*6; } break;
+                            case 47: const cxS = Math.round(px/20)*20; const cyS = Math.round(py/20)*20; if(Math.abs(cxS-px)<Math.abs(cyS-py)) vx += (cxS-px)*s*0.9; else vy += (cyS-py)*s*0.9; break;
+                            case 48: if(px%45<5) vy += Math.sin(px*0.01)*s*4; if(py%45<5) vx += Math.cos(py*0.01)*s*4; break;
+                            case 49: const sdTX = Math.floor(cell.x/50)*50+Math.cos(cell.id)*hw; const sdTY = Math.floor(cell.y/50)*50+Math.sin(cell.id)*hh; vx += (sdTX-px)*s*0.048; vy += (sdTY-py)*s*0.048; break;
+                            case 50: vx += ((Math.floor(px/25)+Math.floor(py/25))%2==0?1:-1)*s*3; vy += -((Math.floor(px/25)+Math.floor(py/25))%2==0?1:-1)*s*3; break;
+                            case 51: vx += Math.cos(angle)*s*3; vy += Math.sin(angle)*s*3; break;
+                            case 56: vx += (Math.round(px/40)*40-px)*s*3.2; break;
+                            case 65: vx += Math.cos(angle)*s*1.25; vy += Math.sin(angle)*s*1.25; break;
+                            case 67: vx += Math.cos(angle)*Math.sin(dist*0.1 - cell.rotation)*s*1; break;
+                            case 68: const cgOfs = (phase/360)*20; vx += (Math.round((px + cgOfs)/30)*30 - cgOfs - px)*s*0.6; break;
+                        }
+                    }
+                }
+
+                px += vx * CONSTANTS.BASE_SPEED * dt;
+                py += vy * CONSTANTS.BASE_SPEED * dt;
+                vx *= fPow;
+                vy *= fPow;
+                phase = (phase + cycleSpeed * dt) % 360;
+
+                if (px < 0) px += width; else if (px >= width) px -= width;
+                if (py < 0) py += height; else if (py >= height) py -= height;
+
+                particleData[idx] = px; particleData[idx+1] = py;
+                particleData[idx+2] = vx; particleData[idx+3] = vy;
+                particleData[idx+4] = phase;
+
+                let color = currentPalette[phase | 0];
                 
-                let lumaFactor = config.velocityLuma ? Math.min(1.0, Math.sqrt(p.vx * p.vx + p.vy * p.vy) / 12.0) : 1.0;
-                const px = Math.floor(p.x); const py = Math.floor(p.y);
-                
-                for (let gy = 0; gy < gs; gy++) {
-                    const py_off = py + gy;
-                    if (py_off < 0 || py_off >= height) continue;
-                    for (let gx = 0; gx < gs; gx++) {
-                        const px_off = px + gx;
-                        if (px_off < 0 || px_off >= width) continue;
-                        const idx = (py_off * width + px_off) * 4;
-                        data[idx] = p.r * lumaFactor; data[idx+1] = p.g * lumaFactor; data[idx+2] = p.b * lumaFactor; data[idx+3] = 255;
+                if (useLuma) {
+                    const v2 = (vx*vx + vy*vy);
+                    const lMult = Math.min(1.0, v2 / 144);
+                    const r = (color & 0xFF) * lMult;
+                    const g = ((color >> 8) & 0xFF) * lMult;
+                    const b = ((color >> 16) & 0xFF) * lMult;
+                    color = (255 << 24) | (b << 16) | (g << 8) | r;
+                }
+
+                const iPX = px|0; const iPY = py|0;
+                if (gs === 1) {
+                    data32[iPY * width + iPX] = color;
+                } else {
+                    for(let gy=0; gy<gs; gy++) {
+                        const y_off = iPY + gy;
+                        if (y_off >= height || y_off < 0) continue;
+                        const row = y_off * width;
+                        for(let gx=0; gx<gs; gx++) {
+                            const x_off = iPX + gx;
+                            if (x_off >= width || x_off < 0) continue;
+                            data32[row + x_off] = color;
+                        }
                     }
                 }
             }
+            
             ctx.putImageData(imageData, 0, 0);
-            requestAnimationFrame(loop);
+            requestAnimationFrame(engineLoop);
         }
 
-        document.getElementById('btn-soft').onclick = () => { config.hardEdges = false; document.getElementById('btn-soft').classList.add('active'); document.getElementById('btn-hard').classList.remove('active'); saveState(); };
-        document.getElementById('btn-hard').onclick = () => { config.hardEdges = true; document.getElementById('btn-hard').classList.add('active'); document.getElementById('btn-soft').classList.remove('active'); saveState(); };
-        document.getElementById('btn-velocity-luma').onclick = (e) => { config.velocityLuma = !config.velocityLuma; e.target.classList.toggle('active', config.velocityLuma); saveState(); };
-        
-        canvas.onclick = (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } };
-        document.getElementById('close-menu').onclick = () => menu.classList.remove('active');
-        document.getElementById('toggle-all').onclick = () => {
-            const target = !enabledEffects.some(e => e); enabledEffects.fill(target); buildMenu(); saveState();
-        };
-
-        document.getElementById('randomise').onclick = () => {
-            enabledEffects.fill(false);
-            const org = EFFECT_NAMES.map((n, i) => n.includes('[O]') ? i : -1).filter(i => i !== -1);
-            const dyn = EFFECT_NAMES.map((n, i) => !n.includes('[O]') && !n.includes('[C]') ? i : -1).filter(i => i !== -1);
-            const chr = EFFECT_NAMES.map((n, i) => n.includes('[C]') ? i : -1).filter(i => i !== -1);
-            const sel = new Set();
-            sel.add(chr[Math.floor(Math.random() * chr.length)]);
-            const nOrg = Math.random() < 0.5 ? 3 : 4;
-            const shuf = (a) => a.sort(() => Math.random() - 0.5);
-            shuf(org); for(let i=0; i<nOrg; i++) sel.add(org[i]);
-            shuf(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
-            sel.forEach(idx => enabledEffects[idx] = true);
-
-            if (Math.random() < 0.05) config.palette = Object.keys(CYCLIC_PALETTES)[Math.floor(Math.random() * Object.keys(CYCLIC_PALETTES).length)];
-            else config.palette = Object.keys(STATIC_PALETTES)[Math.floor(Math.random() * Object.keys(STATIC_PALETTES).length)];
-            
-            config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
-            resize(); 
-            particles.forEach(p => p.assignColor());
-            buildMenu();
-            saveState();
-        };
-
-        window.onresize = resize;
-        resize(); 
-        requestAnimationFrame(loop);
+        setupUIEvents();
+        resizeEngine(); 
+        requestAnimationFrame(engineLoop);
     </script>
 </body>
 </html>
