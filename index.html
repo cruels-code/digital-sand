@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL SAND ART - V4.6.2</title>
+    <title>digital sand - V4.6.3</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -198,7 +198,7 @@
 
     <div id="menu-overlay">
         <div class="terminal-header">
-            <h2>V4.6.2</h2>
+            <h2>V4.6.3</h2>
         </div>
 
         <div class="settings-panel">
@@ -229,17 +229,17 @@
             <button class="btn" id="close-menu">[ RESUME ]</button>
         </div>
         
-        <details open>
+        <details>
             <summary><span>[ ORGANIC ]</span><span>+</span></summary>
             <div class="effect-category-content" id="cat-organic"></div>
         </details>
 
-        <details open>
+        <details>
             <summary><span>[ FLUID ]</span><span>+</span></summary>
             <div class="effect-category-content" id="cat-fluid"></div>
         </details>
 
-        <details open>
+        <details>
             <summary><span>[ CHROMA ]</span><span>+</span></summary>
             <div class="effect-category-content" id="cat-chroma"></div>
         </details>
@@ -252,10 +252,8 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        // Timing Control - Declared at top to prevent ReferenceErrors
         let lastFrameTime = performance.now();
 
-        // Protected variables for external hosting
         const hasFirebase = typeof __firebase_config !== 'undefined';
         const firebaseConfig = hasFirebase ? JSON.parse(__firebase_config) : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'standalone-sand-art';
@@ -291,7 +289,7 @@
         const CELL_COUNT = 5; 
         const FRICTION = 0.94; 
         const BASE_SPEED = 0.5;
-        const MAX_PARTICLES = 120000;
+        const MAX_PARTICLES = 180000; // Increased cap to support 50% density boost
 
         const EFFECT_NAMES = [
             "Lorenz Attractor", "Galaxy Spiral", "Wind Gusts", "Ripples", "Hex Grid [O]", 
@@ -320,7 +318,6 @@
 
         let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
         
-        // CALIBRATED DEFAULT STRENGTHS (Matching Screenshots precisely)
         let effectStrengths = [
             100, 28, 200, 200, 200, // 0-4
             200, 200, 7, 100, 100,  // 5-9
@@ -678,7 +675,11 @@
             height = canvas.height = Math.floor(window.innerHeight);
             if (width === 0 || height === 0) return;
             
-            let coverageRatio = config.grainSize === 2 ? 0.15 : (config.grainSize === 3 ? 0.20 : 0.10);
+            // COVERAGE RATIOS BOOSTED 50%
+            let coverageRatio = 0.15; // 1x1: 10% -> 15%
+            if (config.grainSize === 2) coverageRatio = 0.225; // 2x2: 15% -> 22.5%
+            else if (config.grainSize === 3) coverageRatio = 0.30; // 3x3: 20% -> 30%
+            
             particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
             
             if (particles.length > particleCount) particles.length = particleCount;
@@ -691,7 +692,6 @@
         function loop(timestamp) {
             if (width <= 0 || height <= 0) return requestAnimationFrame(loop);
             
-            // Safety initialization for frame time
             if (!lastFrameTime) lastFrameTime = timestamp;
             const dt = Math.min(2.0, (timestamp - lastFrameTime) / 16.66); 
             lastFrameTime = timestamp;
