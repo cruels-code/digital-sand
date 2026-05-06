@@ -259,7 +259,6 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        // Firebase Config
         const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -270,7 +269,7 @@
         const ctx = canvas.getContext('2d', { alpha: false });
         const menu = document.getElementById('menu-overlay');
 
-        let width, height;
+        let width = 0, height = 0;
         let particles = [];
         let cells = [];
         let user = null;
@@ -280,7 +279,6 @@
         const BASE_SPEED = 0.5;
         const MAX_PARTICLES = 120000;
 
-        // Base Effect Configuration
         const EFFECT_NAMES = [
             "Lorenz Attractor", "Galaxy Spiral", "Wind Gusts", "Ripples", "Hex Grid [O]", 
             "Diamond Lattice [O]", "Vortex", "Divergence", "Convergence", "Shear",
@@ -306,11 +304,9 @@
             grainSize: 1 
         };
 
-        // State initialized to defaults
         let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
-        let effectStrengths = new Array(EFFECT_NAMES.length).fill(100); // Percentage 0-200
+        let effectStrengths = new Array(EFFECT_NAMES.length).fill(100);
 
-        // Auth Logic (Rule 3)
         const initAuth = async () => {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                 await signInWithCustomToken(auth, __initial_auth_token);
@@ -326,7 +322,6 @@
 
         initAuth();
 
-        // PERSISTENCE MODULE
         async function saveState() {
             if (!user) return;
             try {
@@ -352,16 +347,12 @@
                 Object.assign(config, data.config);
                 enabledEffects = data.enabledEffects;
                 effectStrengths = data.effectStrengths;
-                
-                // Refresh UI
                 document.getElementById('btn-soft').classList.toggle('active', !config.hardEdges);
                 document.getElementById('btn-hard').classList.toggle('active', config.hardEdges);
                 document.getElementById('btn-velocity-luma').classList.toggle('active', config.velocityLuma);
-                
-                resize(); // Re-inits with loaded sizes
+                resize();
                 buildMenu();
             } else {
-                // First run defaults already set in state
                 resize();
                 buildMenu();
             }
@@ -430,8 +421,8 @@
         class Particle {
             constructor() { this.init(); }
             init() {
-                this.x = Math.random() * (width || window.innerWidth);
-                this.y = Math.random() * (height || window.innerHeight);
+                this.x = Math.random() * (width || 1);
+                this.y = Math.random() * (height || 1);
                 this.vx = 0; this.vy = 0;
                 this.phase = Math.floor(Math.random() * 360);
                 this.assignColor();
@@ -462,8 +453,7 @@
                 if (CYCLIC_PALETTES[config.palette]) {
                     let cycleSpeed = config.palette === 'cycle_strobe' ? 15.0 : 1.0;
                     this.phase = (this.phase + cycleSpeed * dt) % 360;
-                    if (this.phase < 0) this.phase += 360;
-                    const c = CYCLIC_PALETTES[config.palette][Math.floor(this.phase)];
+                    const c = CYCLIC_PALETTES[config.palette][Math.floor(this.phase) % 360];
                     if (c) { this.r = c.r; this.g = c.g; this.b = c.b; this.luma = (this.r + this.g + this.b) / 3; }
                 }
                 if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
@@ -473,14 +463,14 @@
 
         class Cell {
             constructor(id) {
-                this.id = id; this.x = Math.random() * (width || window.innerWidth);
-                this.y = Math.random() * (height || window.innerHeight);
+                this.id = id; this.x = Math.random() * (width || 1);
+                this.y = Math.random() * (height || 1);
                 this.vx = 0; this.vy = 0;
                 this.targetVx = 0; this.targetVy = 0;
                 this.moveTimer = 0; this.reset();
             }
             reset() {
-                const canvasMin = Math.min(width, height);
+                const canvasMin = Math.min(width, height) || 1;
                 const scale = 0.26 + Math.random() * 0.26;
                 this.sizeW = canvasMin * scale; this.sizeH = canvasMin * scale;
                 const validIndices = enabledEffects.map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
@@ -492,7 +482,8 @@
             changeMovement() {
                 const angle = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
                 const speed = (0.5 + Math.random() * 4.5);
-                this.targetVx = Math.cos(angle) * speed; this.targetVy = Math.sin(angle) * speed;
+                this.targetVx = Math.cos(angle) * speed; 
+                this.targetVy = Math.sin(angle) * speed;
                 this.moveTimer = 1000 + Math.random() * 2000;
             }
             update(dt) {
@@ -520,11 +511,8 @@
                     const t = Math.max(Math.abs(normX), Math.abs(normY));
                     const inverseT = Math.max(0, 1 - t);
                     const edgeForce = config.hardEdges ? (inverseT > 0.02 ? 1 : 0) : (inverseT * inverseT * (3 - 2 * inverseT));
-                    
-                    // USER STRENGTH MODIFIER:
                     const userMult = (effectStrengths[this.effectIndex] / 100);
                     const s = this.strengthBase * edgeForce * dt * userMult;
-                    
                     const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
                     switch(this.effectIndex) {
                         case 0: const lz = Math.sin(this.rotation)*10+20; p.vx += (10*(normY*10-normX*10))*s*0.05; p.vy += (normX*10*(28-lz)-normY*10)*s*0.05; break;
@@ -590,7 +578,7 @@
                         case 60: const lStp = height / 6; p.vy += (lStp * Math.floor(p.luma / 42.5) + lStp/2 - ((p.y - this.y + height/2) % height)) * s * 0.1; break;
                         case 61: if(p.r > p.g && p.r > p.b) { p.vx += (-hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; } 
                             else if(p.g > p.r && p.g > p.b) { p.vx += (hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; }
-                            else if(p.b > p.r && p.b > p.g) { p.vx += (-hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; } break;
+                            else if(p.b > p.r && p.b > p.g) { p.vx += (-hw - dx)*s*0.05; p.vy += (hh - dy)*s*0.05; } break;
                         case 62: const sDv = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b) > 100 ? 1 : -1); p.vx += Math.cos(angle)*sDv*s*1.5; p.vy += Math.sin(angle)*sDv*s*1.5; break;
                         case 63: const hAngM = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(hAngM)*dist - dx)*s*0.3; p.vy += (Math.sin(hAngM)*dist - dy) * s * 0.3; break;
                         case 64: let pRotS = p.r > 200 ? 0.05 : (p.g > 200 ? -0.05 : 0.02); p.vx += Math.cos(angle + 1.57)*dist*pRotS*s; p.vy += Math.sin(angle + 1.57)*dist*pRotS*s; break;
@@ -612,14 +600,11 @@
             EFFECT_NAMES.forEach((name, idx) => {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'effect-item-wrapper';
-                
                 const topRow = document.createElement('div');
                 topRow.className = 'effect-row-top';
-                
                 const label = document.createElement('span');
                 label.className = 'effect-name' + (enabledEffects[idx] ? ' active-text' : '');
                 label.innerText = name;
-                
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = enabledEffects[idx];
@@ -628,35 +613,23 @@
                     label.classList.toggle('active-text', enabledEffects[idx]);
                     saveState();
                 };
-
                 topRow.appendChild(label);
                 topRow.appendChild(checkbox);
-
                 const strengthContainer = document.createElement('div');
-                strengthContainer.className = 'strength-group';
-                
                 const slider = document.createElement('input');
-                slider.type = 'range';
-                slider.min = '0';
-                slider.max = '200';
-                slider.value = effectStrengths[idx];
-                
+                slider.type = 'range'; slider.min = '0'; slider.max = '200'; slider.value = effectStrengths[idx];
                 const sLabel = document.createElement('div');
                 sLabel.className = 'strength-label';
                 sLabel.innerHTML = `<span>POWER</span><span>${effectStrengths[idx]}%</span>`;
-
                 slider.oninput = (e) => {
                     effectStrengths[idx] = parseInt(e.target.value);
                     sLabel.innerHTML = `<span>POWER</span><span>${effectStrengths[idx]}%</span>`;
                 };
                 slider.onchange = () => saveState();
-
                 strengthContainer.appendChild(slider);
                 strengthContainer.appendChild(sLabel);
-
                 wrapper.appendChild(topRow);
                 wrapper.appendChild(strengthContainer);
-
                 if (name.includes('[O]')) catOrganic.appendChild(wrapper);
                 else if (name.includes('[C]')) catChroma.appendChild(wrapper);
                 else catFluid.appendChild(wrapper);
@@ -669,7 +642,7 @@
                 const btn = document.createElement('button');
                 btn.className = 'btn' + (config.palette === key ? ' active' : '');
                 btn.innerText = key.includes('cycle') ? `[ ${key.split('_')[1].toUpperCase()} ]` : key.charAt(0).toUpperCase() + key.slice(1);
-                btn.onclick = (e) => {
+                btn.onclick = () => {
                     document.querySelectorAll('#palette-list .btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     config.palette = key;
@@ -681,20 +654,18 @@
         }
 
         function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+            width = canvas.width = Math.floor(window.innerWidth);
+            height = canvas.height = Math.floor(window.innerHeight);
             let coverageRatio = config.grainSize === 2 ? 0.15 : (config.grainSize === 3 ? 0.20 : 0.10);
             particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
-            
-            // Conserve particles
             if (particles.length > particleCount) particles.length = particleCount;
             else while (particles.length < particleCount) particles.push(new Particle());
-            
             cells = [];
             for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
         }
 
         function loop(timestamp) {
+            if (!width || !height) return requestAnimationFrame(loop);
             const dt = Math.min(2.0, (timestamp - lastFrameTime) / 16.66); 
             lastFrameTime = timestamp;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
@@ -728,7 +699,6 @@
         document.getElementById('btn-soft').onclick = () => { config.hardEdges = false; document.getElementById('btn-soft').classList.add('active'); document.getElementById('btn-hard').classList.remove('active'); saveState(); };
         document.getElementById('btn-hard').onclick = () => { config.hardEdges = true; document.getElementById('btn-hard').classList.add('active'); document.getElementById('btn-soft').classList.remove('active'); saveState(); };
         document.getElementById('btn-velocity-luma').onclick = (e) => { config.velocityLuma = !config.velocityLuma; e.target.classList.toggle('active', config.velocityLuma); saveState(); };
-        
         canvas.onclick = (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } };
         document.getElementById('close-menu').onclick = () => menu.classList.remove('active');
         document.getElementById('toggle-all').onclick = () => {
@@ -747,10 +717,8 @@
             shuf(org); for(let i=0; i<nOrg; i++) sel.add(org[i]);
             shuf(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
             sel.forEach(idx => enabledEffects[idx] = true);
-
             if (Math.random() < 0.05) config.palette = Object.keys(CYCLIC_PALETTES)[Math.floor(Math.random() * Object.keys(CYCLIC_PALETTES).length)];
             else config.palette = Object.keys(STATIC_PALETTES)[Math.floor(Math.random() * Object.keys(STATIC_PALETTES).length)];
-            
             config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
             resize(); 
             particles.forEach(p => p.assignColor());
@@ -759,6 +727,7 @@
         };
 
         window.onresize = resize;
+        resize(); // Immediate initialization
         requestAnimationFrame(loop);
     </script>
 </body>
