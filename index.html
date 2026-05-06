@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL SAND ART - V4.5.8</title>
+    <title>TERMINAL SAND ART - V4.5.9</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -103,7 +103,6 @@
             color: #000;
         }
         
-        /* Dropdown Styling */
         details {
             width: 100%;
             max-width: 900px;
@@ -125,28 +124,52 @@
             border-bottom: 1px solid #222;
             color: #fff;
         }
-        summary::-webkit-details-marker { display: none; }
         .effect-category-content {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 5px;
-            padding: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+            padding: 15px;
         }
 
-        .effect-item {
+        .effect-item-wrapper {
+            background: #0c0c0c;
             border: 1px solid #1a1a1a;
-            padding: 5px 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .effect-row-top {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .effect-name { font-size: 10px; color: #666; }
+        .active-text { color: #00ff00 !important; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #1a1a1a;
+            outline: none;
             cursor: pointer;
         }
-        .effect-item:hover { border-color: #00ff00; }
-        .effect-item input { cursor: pointer; transform: scale(0.8); }
-        .effect-name { font-size: 9px; color: #666; }
-        .effect-item:has(input:checked) .effect-name { color: #00ff00; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #00ff00;
+            border: 1px solid #000;
+        }
+        .strength-label {
+            font-size: 9px;
+            color: #444;
+            display: flex;
+            justify-content: space-between;
+        }
 
-        /* Palette Grid - Rows of 5 */
         .palette-container {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -161,6 +184,16 @@
             text-overflow: ellipsis;
         }
 
+        #save-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 9px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #222; }
     </style>
@@ -168,10 +201,11 @@
 <body>
 
     <canvas id="canvas"></canvas>
+    <div id="save-indicator">>> DATA_SYNCED</div>
 
     <div id="menu-overlay">
         <div class="terminal-header">
-            <h2>V4.5.8</h2>
+            <h2>V4.5.9</h2>
         </div>
 
         <div class="settings-panel">
@@ -220,7 +254,18 @@
         <div style="height: 100px;"></div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // Firebase Config
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-sand-art';
+
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d', { alpha: false });
         const menu = document.getElementById('menu-overlay');
@@ -228,18 +273,99 @@
         let width, height;
         let particles = [];
         let cells = [];
+        let user = null;
         let particleCount = 0; 
         const CELL_COUNT = 5; 
         const FRICTION = 0.94; 
         const BASE_SPEED = 0.5;
         const MAX_PARTICLES = 120000;
 
-        const config = {
+        // Base Effect Configuration
+        const EFFECT_NAMES = [
+            "Lorenz Attractor", "Galaxy Spiral", "Wind Gusts", "Ripples", "Hex Grid [O]", 
+            "Diamond Lattice [O]", "Vortex", "Divergence", "Convergence", "Shear",
+            "Radial Comb", "Cross Wind", "Vertical Gusts", "Orbitals", "Square Wave", 
+            "Bubble Repulsion", "Chaos Mix", "Warp Drive", "Mirror Center", "Crystallize [O]",
+            "Turbulent Flow", "Sine Sieve", "Expansion Pulse", "Tangent Twist", "DNA Spiral",
+            "Perlin Drift", "Concentric Spin", "Zoom Out", "Magnetic North", "Maze Runner",
+            "Concentric Squares [O]", "Dotted Grid [O]", "Vertical Pinstripes [O]", "Diagonal Crosshatch [O]", "Honeycomb [O]",
+            "Radial Spokes [O]", "Ziggurat [O]", "Dotted Spirals [O]", "Checkerboard Push [O]", "Diamond Dot Array [O]",
+            "Fibonacci Spiral [O]", "Mandelbrot Boundary [O]", "Voronoi Cells [O]", "Hilbert Curve [O]", "Binary Tree [O]",
+            "Isometric Cube [O]", "Radar Sweep [O]", "Circuit Board [O]", "Tartan Plaid [O]", "Serendipity Dots [O]", 
+            "Weave Lattice [O]", "Luma Attraction [C]", "RGB Spectral Drift [C]", "Chrome Saturation Sort [C]", 
+            "Red/Blue Divergence [C]", "Green Channel Sieve [C]", "Color Gradient Snap [C]", "Hue Orbital Ring [C]", 
+            "Inverse Luma Push [C]", "Warm/Cool Shear [C]", "Luma Staircase [C]", "RGB Corner Sort [C]", 
+            "Saturation Barrier [C]", "Hue Angular Mapper [C]", "Primary Spin [C]", "Intensity Well [C]", 
+            "CMY Divergence [C]", "Chromatic Wave [C]", "Color Grid Snap [C]"
+        ];
+
+        let config = {
             hardEdges: false,
             velocityLuma: false,
             palette: 'cycle_strobe', 
             grainSize: 1 
         };
+
+        // State initialized to defaults
+        let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
+        let effectStrengths = new Array(EFFECT_NAMES.length).fill(100); // Percentage 0-200
+
+        // Auth Logic (Rule 3)
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            user = u;
+            if (user) loadState();
+        });
+
+        initAuth();
+
+        // PERSISTENCE MODULE
+        async function saveState() {
+            if (!user) return;
+            try {
+                const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
+                await setDoc(stateRef, {
+                    config,
+                    enabledEffects,
+                    effectStrengths,
+                    timestamp: Date.now()
+                });
+                const ind = document.getElementById('save-indicator');
+                ind.style.opacity = 1;
+                setTimeout(() => ind.style.opacity = 0, 2000);
+            } catch (err) { console.error("Save failed", err); }
+        }
+
+        async function loadState() {
+            if (!user) return;
+            const stateRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'current');
+            const snap = await getDoc(stateRef);
+            if (snap.exists()) {
+                const data = snap.data();
+                Object.assign(config, data.config);
+                enabledEffects = data.enabledEffects;
+                effectStrengths = data.effectStrengths;
+                
+                // Refresh UI
+                document.getElementById('btn-soft').classList.toggle('active', !config.hardEdges);
+                document.getElementById('btn-hard').classList.toggle('active', config.hardEdges);
+                document.getElementById('btn-velocity-luma').classList.toggle('active', config.velocityLuma);
+                
+                resize(); // Re-inits with loaded sizes
+                buildMenu();
+            } else {
+                // First run defaults already set in state
+                resize();
+                buildMenu();
+            }
+        }
 
         let lastFrameTime = performance.now();
 
@@ -301,26 +427,6 @@
             monogold: [{r:101,g:67,b:33},{r:255,g:215,b:0},{r:218,g:165,b:32},{r:255,g:255,b:150}]
         };
 
-        const EFFECT_NAMES = [
-            "Lorenz Attractor", "Galaxy Spiral", "Wind Gusts", "Ripples", "Hex Grid [O]", 
-            "Diamond Lattice [O]", "Vortex", "Divergence", "Convergence", "Shear",
-            "Radial Comb", "Cross Wind", "Vertical Gusts", "Orbitals", "Square Wave", 
-            "Bubble Repulsion", "Chaos Mix", "Warp Drive", "Mirror Center", "Crystallize [O]",
-            "Turbulent Flow", "Sine Sieve", "Expansion Pulse", "Tangent Twist", "DNA Spiral",
-            "Perlin Drift", "Concentric Spin", "Zoom Out", "Magnetic North", "Maze Runner",
-            "Concentric Squares [O]", "Dotted Grid [O]", "Vertical Pinstripes [O]", "Diagonal Crosshatch [O]", "Honeycomb [O]",
-            "Radial Spokes [O]", "Ziggurat [O]", "Dotted Spirals [O]", "Checkerboard Push [O]", "Diamond Dot Array [O]",
-            "Fibonacci Spiral [O]", "Mandelbrot Boundary [O]", "Voronoi Cells [O]", "Hilbert Curve [O]", "Binary Tree [O]",
-            "Isometric Cube [O]", "Radar Sweep [O]", "Circuit Board [O]", "Tartan Plaid [O]", "Serendipity Dots [O]", 
-            "Weave Lattice [O]", "Luma Attraction [C]", "RGB Spectral Drift [C]", "Chrome Saturation Sort [C]", 
-            "Red/Blue Divergence [C]", "Green Channel Sieve [C]", "Color Gradient Snap [C]", "Hue Orbital Ring [C]", 
-            "Inverse Luma Push [C]", "Warm/Cool Shear [C]", "Luma Staircase [C]", "RGB Corner Sort [C]", 
-            "Saturation Barrier [C]", "Hue Angular Mapper [C]", "Primary Spin [C]", "Intensity Well [C]", 
-            "CMY Divergence [C]", "Chromatic Wave [C]", "Color Grid Snap [C]"
-        ];
-
-        let enabledEffects = new Array(EFFECT_NAMES.length).fill(true);
-
         class Particle {
             constructor() { this.init(); }
             init() {
@@ -353,16 +459,12 @@
                 this.y += this.vy * BASE_SPEED * dt;
                 const f = Math.pow(FRICTION, dt);
                 this.vx *= f; this.vy *= f;
-
                 if (CYCLIC_PALETTES[config.palette]) {
                     let cycleSpeed = config.palette === 'cycle_strobe' ? 15.0 : 1.0;
                     this.phase = (this.phase + cycleSpeed * dt) % 360;
                     if (this.phase < 0) this.phase += 360;
                     const c = CYCLIC_PALETTES[config.palette][Math.floor(this.phase)];
-                    if (c) {
-                        this.r = c.r; this.g = c.g; this.b = c.b;
-                        this.luma = (this.r + this.g + this.b) / 3;
-                    }
+                    if (c) { this.r = c.r; this.g = c.g; this.b = c.b; this.luma = (this.r + this.g + this.b) / 3; }
                 }
                 if (this.x < 0) this.x += width; else if (this.x >= width) this.x -= width;
                 if (this.y < 0) this.y += height; else if (this.y >= height) this.y -= height;
@@ -384,14 +486,13 @@
                 const validIndices = enabledEffects.map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
                 this.effectIndex = validIndices.length > 0 ? validIndices[Math.floor(Math.random() * validIndices.length)] : 0;
                 this.timer = 0; this.duration = 10000 + Math.random() * 5000;
-                this.rotation = 0; this.strength = (0.6 + Math.random() * 2.4);
+                this.rotation = 0; this.strengthBase = (0.6 + Math.random() * 2.4);
                 this.changeMovement();
             }
             changeMovement() {
                 const angle = (Math.floor(Math.random() * 4)) * (Math.PI / 2);
                 const speed = (0.5 + Math.random() * 4.5);
-                this.targetVx = Math.cos(angle) * speed; 
-                this.targetVy = Math.sin(angle) * speed;
+                this.targetVx = Math.cos(angle) * speed; this.targetVy = Math.sin(angle) * speed;
                 this.moveTimer = 1000 + Math.random() * 2000;
             }
             update(dt) {
@@ -419,7 +520,11 @@
                     const t = Math.max(Math.abs(normX), Math.abs(normY));
                     const inverseT = Math.max(0, 1 - t);
                     const edgeForce = config.hardEdges ? (inverseT > 0.02 ? 1 : 0) : (inverseT * inverseT * (3 - 2 * inverseT));
-                    const s = this.strength * edgeForce * dt;
+                    
+                    // USER STRENGTH MODIFIER:
+                    const userMult = (effectStrengths[this.effectIndex] / 100);
+                    const s = this.strengthBase * edgeForce * dt * userMult;
+                    
                     const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
                     switch(this.effectIndex) {
                         case 0: const lz = Math.sin(this.rotation)*10+20; p.vx += (10*(normY*10-normX*10))*s*0.05; p.vy += (normX*10*(28-lz)-normY*10)*s*0.05; break;
@@ -457,97 +562,122 @@
                         case 32: p.vx += (Math.round(p.x/12)*12-p.x)*s*0.9; break;
                         case 33: p.vx += ((p.x+p.y)%30<(p.x-p.y)%30?1:-1)*s*2; break;
                         case 34: p.vx += (Math.round(p.x/100)*100-p.x)*s*0.3; p.vy += (Math.round(p.y/60)*60-p.y)*s*0.3; break;
-                        case 35: const s_pA = Math.round(angle*4)/4; p.vx += (Math.cos(s_pA)*dist-dx)*s*0.4; p.vy += (Math.sin(s_pA)*dist-dy)*s*0.4; break;
+                        case 35: const spA = Math.round(angle*4)/4; p.vx += (Math.cos(spA)*dist-dx)*s*0.4; p.vy += (Math.sin(spA)*dist-dy)*s*0.4; break;
                         case 36: p.vx += (Math.floor(p.x/40)*40+(p.y%40)-p.x)*s*0.5; break;
-                        case 37: const s_dA = angle+dist*0.033; p.vx += (Math.cos(Math.round(s_dA*10)/10)*dist-dx)*s*0.4; p.vy += (Math.sin(Math.round(s_dA*10)/10)*dist-dy)*s*0.4; break;
+                        case 37: const sdA = angle+dist*0.033; p.vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; p.vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break;
                         case 38: p.vx += ((Math.floor(p.x/30)+Math.floor(p.y/30))%2==0?1:-1)*s*3; break;
-                        case 39: const d_Su = Math.round((p.x+p.y)/25)*25; const d_Di = Math.round((p.x-p.y)/25)*25; p.vx += ((d_Su+d_Di)/2-p.x)*s*0.7; p.vy += ((d_Su-d_Di)/2-p.y)*s*0.7; break;
-                        case 40: const gld = Math.PI*(3-Math.sqrt(5)); const f_Ang = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(f_Ang)*dist-p.x)*s*0.125; p.vy += (this.y+Math.sin(f_Ang)*dist-p.y)*s*0.125; break;
-                        case 41: const m_x0 = normX*1.5-0.5; const m_y0 = normY*1.5; let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+m_x0; my=2*mx*my+m_y0; mx=xt; mi++; } if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
+                        case 39: const dSu = Math.round((p.x+p.y)/25)*25; const dDi = Math.round((p.x-p.y)/25)*25; p.vx += ((dSu+dDi)/2-p.x)*s*0.7; p.vy += ((dSu-dDi)/2-p.y)*s*0.7; break;
+                        case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+this.rotation; p.vx += (this.x+Math.cos(fAng)*dist-p.x)*s*0.125; p.vy += (this.y+Math.sin(fAng)*dist-p.y)*s*0.125; break;
+                        case 41: const mx_0 = normX*1.5-0.5; const my_0 = normY*1.5; let mx=0, my=0, mi=0; while(mx*mx+my*my<=4 && mi < 8){ const xt=mx*mx-my*my+mx_0; my=2*mx*my+my_0; mx=xt; mi++; } if(mi < 8){ p.vx += Math.cos(angle) * s * 6; p.vy += Math.sin(angle) * s * 6;} break;
                         case 42: p.vx += (Math.floor(p.x/40)*40+20-p.x)*s*0.6; p.vy += (Math.floor(p.y/40)*40+20-p.y)*s*0.6; break;
                         case 43: p.vx += (Math.floor(normX*8+8)+Math.floor(normY*8+8))%2==0?Math.sin(this.rotation)*s*5:-Math.sin(this.rotation)*s*5; p.vy += (Math.floor(normX*8+8)+Math.floor(normY*8+8))%2==0?Math.cos(this.rotation)*s*5:-Math.cos(this.rotation)*s*5; break;
-                        case 44: const t_Ang = Math.atan2(p.y-height, p.x-width/2); p.vx += Math.cos(t_Ang)*s*4; p.vy += Math.sin(t_Ang)*s*4; break;
+                        case 44: const tAng = Math.atan2(p.y-height, p.x-width/2); p.vx += Math.cos(tAng)*s*4; p.vy += Math.sin(tAng)*s*4; break;
                         case 45: const ix = Math.round((p.x-p.y)/1.73/30)*30*1.73; const iy = Math.round((p.x+p.y)/30)*30; p.vx += (ix+iy/2-p.x)*s*0.35; p.vy += (iy/2-p.y)*s*0.35; break;
                         case 46: if(Math.abs(angle-(this.rotation*2)%(Math.PI*2))<0.1 || Math.abs(angle-(this.rotation*2)%(Math.PI*2))>Math.PI*2-0.1){ p.vx += Math.cos(angle)*s*6; p.vy += Math.sin(angle)*s*6; } break;
-                        case 47: const cx_S = Math.round(p.x/20)*20; const cy_S = Math.round(p.y/20)*20; if(Math.abs(cx_S-p.x)<Math.abs(cy_S-p.y)) p.vx += (cx_S-p.x)*s*0.9; else p.vy += (cy_S-p.y)*s*0.9; break;
+                        case 47: const cxS = Math.round(p.x/20)*20; const cyS = Math.round(p.y/20)*20; if(Math.abs(cxS-p.x)<Math.abs(cyS-p.y)) p.vx += (cxS-p.x)*s*0.9; else p.vy += (cyS-p.y)*s*0.9; break;
                         case 48: if(p.x%45<5) p.vy += Math.sin(p.x*0.01)*s*4; if(p.y%45<5) p.vx += Math.cos(p.y*0.01)*s*4; break;
-                        case 49: const s_dTX = Math.floor(this.x/50)*50+Math.cos(this.id)*hw; const s_dTY = Math.floor(this.y/50)*50+Math.sin(this.id)*hh; p.vx += (s_dTX-p.x)*s*0.048; p.vy += (s_dTY-p.y)*s*0.048; break;
+                        case 49: const sdTX = Math.floor(this.x/50)*50+Math.cos(this.id)*hw; const sdTY = Math.floor(this.y/50)*50+Math.sin(this.id)*hh; p.vx += (sdTX-p.x)*s*0.048; p.vy += (sdTY-p.y)*s*0.048; break;
                         case 50: p.vx += ((Math.floor(p.x/25)+Math.floor(p.y/25))%2==0?1:-1)*s*3; p.vy += -((Math.floor(p.x/25)+Math.floor(p.y/25))%2==0?1:-1)*s*3; break;
                         case 51: p.vx += Math.cos(angle)*((p.luma/255)*6*s-3); p.vy += Math.sin(angle)*((p.luma/255)*6*s-3); break;
                         case 52: if (p.r > p.g && p.r > p.b) p.vx -= s * 5; else if (p.g > p.r && p.g > p.b) p.vy -= s * 5; else p.vx += s * 5; break;
-                        case 53: const s_Ang_V = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b)/255)*Math.PI*2+this.rotation; p.vx += Math.cos(s_Ang_V)*s*5; p.vy += Math.sin(s_Ang_V)*s*5; break;
+                        case 53: const sAngV = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b)/255)*Math.PI*2+this.rotation; p.vx += Math.cos(sAngV)*s*5; p.vy += Math.sin(sAngV)*s*5; break;
                         case 54: p.vx += Math.cos(angle)*(p.r > p.b ? 1 : -1)*s*6; p.vy += Math.sin(angle)*(p.r > p.b ? 1 : -1)*s*6; break;
                         case 55: p.vx += (p.g > 150 ? Math.sin(p.y*0.1)*s*5 : -Math.sin(p.y*0.1)*s*5); break;
                         case 56: p.vx += (Math.round(p.x/40)*40-p.x)*(p.r/255)*s*3.2; break;
                         case 57: p.vx += Math.cos(angle+1.57)*(Math.floor(p.luma/50)%2==0?1:-1)*s*5; p.vy += Math.sin(angle+1.57)*(Math.floor(p.luma/50)%2==0?1:-1)*s*5; break;
                         case 58: p.vx += Math.cos(angle)*(1-p.luma/255)*s*7; p.vy += Math.sin(angle)*(1-p.luma/255)*s*7; break;
                         case 59: p.vx += ((p.r+p.g)/2 > p.b ? 1 : -1)*s*5; break;
-                        case 60: const l_Stp = height / 6; p.vy += (l_Stp * Math.floor(p.luma / 42.5) + l_Stp/2 - ((p.y - this.y + height/2) % height)) * s * 0.1; break;
+                        case 60: const lStp = height / 6; p.vy += (lStp * Math.floor(p.luma / 42.5) + lStp/2 - ((p.y - this.y + height/2) % height)) * s * 0.1; break;
                         case 61: if(p.r > p.g && p.r > p.b) { p.vx += (-hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; } 
                             else if(p.g > p.r && p.g > p.b) { p.vx += (hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; }
                             else if(p.b > p.r && p.b > p.g) { p.vx += (-hw - dx)*s*0.05; p.vy += (-hh - dy)*s*0.05; } break;
-                        case 62: const s_Dvv = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b) > 100 ? 1 : -1); p.vx += Math.cos(angle)*s_Dvv*s*1.5; p.vy += Math.sin(angle)*s_Dvv*s*1.5; break;
-                        case 63: const h_AngM = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(h_AngM)*dist - dx)*s*0.3; p.vy += (Math.sin(h_AngM)*dist - dy) * s * 0.3; break;
-                        case 64: let p_RotS = p.r > 200 ? 0.05 : (p.g > 200 ? -0.05 : 0.02); p.vx += Math.cos(angle + 1.57)*dist*p_RotS*s; p.vy += Math.sin(angle + 1.57)*dist*p_RotS*s; break;
+                        case 62: const sDv = (Math.max(p.r,p.g,p.b)-Math.min(p.r,p.g,p.b) > 100 ? 1 : -1); p.vx += Math.cos(angle)*sDv*s*1.5; p.vy += Math.sin(angle)*sDv*s*1.5; break;
+                        case 63: const hAngM = (p.phase / 360) * Math.PI * 2 + this.rotation; p.vx += (Math.cos(hAngM)*dist - dx)*s*0.3; p.vy += (Math.sin(hAngM)*dist - dy) * s * 0.3; break;
+                        case 64: let pRotS = p.r > 200 ? 0.05 : (p.g > 200 ? -0.05 : 0.02); p.vx += Math.cos(angle + 1.57)*dist*pRotS*s; p.vy += Math.sin(angle + 1.57)*dist*pRotS*s; break;
                         case 65: p.vx += Math.cos(angle)*(p.luma/255 > 0.5 ? -1 : 1)*s*1.25; p.vy += Math.sin(angle)*(p.luma/255 > 0.5 ? -1 : 1)*s*1.25; break;
                         case 66: if(p.r < 100) p.vx -= s*5; else if(p.g < 100) p.vy -= s*5; else if(p.b < 100) p.vx += s*5; break;
                         case 67: p.vx += Math.cos(angle)*Math.sin(dist*0.1 - this.rotation*(p.luma/50))*s*1; p.vy += Math.sin(angle)*Math.sin(dist*0.1 - this.rotation*(p.luma/50))*s*1; break;
-                        case 68: const cg_OOfs = (p.phase/360)*20; p.vx += (Math.round((p.x + cg_OOfs)/30)*30 - cg_OOfs - p.x)*s*0.6; break;
+                        case 68: const cgOfs = (p.phase/360)*20; p.vx += (Math.round((p.x + cgOfs)/30)*30 - cgOfs - p.x)*s*0.6; break;
                     }
                 }
             }
         }
 
-        function adjustParticles() {
-            if (particles.length > particleCount) { particles.length = particleCount; } 
-            else { while (particles.length < particleCount) { particles.push(new Particle()); } }
-        }
-
         function buildMenu() {
-            // Dropdown content generation
             const catOrganic = document.getElementById('cat-organic');
             const catFluid = document.getElementById('cat-fluid');
             const catChroma = document.getElementById('cat-chroma');
-            
             catOrganic.innerHTML = ''; catFluid.innerHTML = ''; catChroma.innerHTML = '';
 
             EFFECT_NAMES.forEach((name, idx) => {
-                const div = document.createElement('div');
-                div.className = 'effect-item';
-                div.innerHTML = `<input type="checkbox" ${enabledEffects[idx] ? 'checked' : ''} id="eff-${idx}"> <span class="effect-name">${name}</span>`;
-                div.addEventListener('click', (e) => {
-                    if (e.target.tagName !== 'INPUT') {
-                        const input = div.querySelector('input');
-                        input.checked = !input.checked;
-                        enabledEffects[idx] = input.checked;
-                    } else { enabledEffects[idx] = e.target.checked; }
-                });
+                const wrapper = document.createElement('div');
+                wrapper.className = 'effect-item-wrapper';
+                
+                const topRow = document.createElement('div');
+                topRow.className = 'effect-row-top';
+                
+                const label = document.createElement('span');
+                label.className = 'effect-name' + (enabledEffects[idx] ? ' active-text' : '');
+                label.innerText = name;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = enabledEffects[idx];
+                checkbox.onchange = (e) => {
+                    enabledEffects[idx] = e.target.checked;
+                    label.classList.toggle('active-text', enabledEffects[idx]);
+                    saveState();
+                };
 
-                if (name.includes('[O]')) catOrganic.appendChild(div);
-                else if (name.includes('[C]')) catChroma.appendChild(div);
-                else catFluid.appendChild(div);
+                topRow.appendChild(label);
+                topRow.appendChild(checkbox);
+
+                const strengthContainer = document.createElement('div');
+                strengthContainer.className = 'strength-group';
+                
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.min = '0';
+                slider.max = '200';
+                slider.value = effectStrengths[idx];
+                
+                const sLabel = document.createElement('div');
+                sLabel.className = 'strength-label';
+                sLabel.innerHTML = `<span>POWER</span><span>${effectStrengths[idx]}%</span>`;
+
+                slider.oninput = (e) => {
+                    effectStrengths[idx] = parseInt(e.target.value);
+                    sLabel.innerHTML = `<span>POWER</span><span>${effectStrengths[idx]}%</span>`;
+                };
+                slider.onchange = () => saveState();
+
+                strengthContainer.appendChild(slider);
+                strengthContainer.appendChild(sLabel);
+
+                wrapper.appendChild(topRow);
+                wrapper.appendChild(strengthContainer);
+
+                if (name.includes('[O]')) catOrganic.appendChild(wrapper);
+                else if (name.includes('[C]')) catChroma.appendChild(wrapper);
+                else catFluid.appendChild(wrapper);
             });
 
-            // Palette Grid List
             const pList = document.getElementById('palette-list');
             pList.innerHTML = '';
-            
             const allPals = [...Object.keys(CYCLIC_PALETTES), ...Object.keys(STATIC_PALETTES)];
             allPals.forEach(key => {
                 const btn = document.createElement('button');
                 btn.className = 'btn' + (config.palette === key ? ' active' : '');
-                btn.dataset.palette = key;
                 btn.innerText = key.includes('cycle') ? `[ ${key.split('_')[1].toUpperCase()} ]` : key.charAt(0).toUpperCase() + key.slice(1);
-                btn.onclick = (e) => selectPalette(e, key);
+                btn.onclick = (e) => {
+                    document.querySelectorAll('#palette-list .btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    config.palette = key;
+                    particles.forEach(p => p.assignColor());
+                    saveState();
+                };
                 pList.appendChild(btn);
             });
-        }
-
-        function selectPalette(e, key) {
-            document.querySelectorAll('[data-palette]').forEach(b => b.classList.remove('active'));
-            if (e && e.target) e.target.classList.add('active');
-            config.palette = key;
-            particles.forEach(p => p.assignColor());
         }
 
         function resize() {
@@ -555,17 +685,13 @@
             height = canvas.height = window.innerHeight;
             let coverageRatio = config.grainSize === 2 ? 0.15 : (config.grainSize === 3 ? 0.20 : 0.10);
             particleCount = Math.min(MAX_PARTICLES, Math.floor((width * height * coverageRatio) / (config.grainSize * config.grainSize))); 
-            adjustParticles();
+            
+            // Conserve particles
+            if (particles.length > particleCount) particles.length = particleCount;
+            else while (particles.length < particleCount) particles.push(new Particle());
+            
             cells = [];
             for (let i = 0; i < CELL_COUNT; i++) cells.push(new Cell(i));
-        }
-
-        function fisherYates(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
         }
 
         function loop(timestamp) {
@@ -599,56 +725,40 @@
             requestAnimationFrame(loop);
         }
 
-        document.getElementById('btn-soft').addEventListener('click', (e) => {
-            config.hardEdges = false; e.target.classList.add('active');
-            document.getElementById('btn-hard').classList.remove('active');
-        });
-        document.getElementById('btn-hard').addEventListener('click', (e) => {
-            config.hardEdges = true; e.target.classList.add('active');
-            document.getElementById('btn-soft').classList.remove('active');
-        });
-        document.getElementById('btn-velocity-luma').addEventListener('click', (e) => {
-            config.velocityLuma = !config.velocityLuma;
-            e.target.classList.toggle('active', config.velocityLuma);
-        });
+        document.getElementById('btn-soft').onclick = () => { config.hardEdges = false; document.getElementById('btn-soft').classList.add('active'); document.getElementById('btn-hard').classList.remove('active'); saveState(); };
+        document.getElementById('btn-hard').onclick = () => { config.hardEdges = true; document.getElementById('btn-hard').classList.add('active'); document.getElementById('btn-soft').classList.remove('active'); saveState(); };
+        document.getElementById('btn-velocity-luma').onclick = (e) => { config.velocityLuma = !config.velocityLuma; e.target.classList.toggle('active', config.velocityLuma); saveState(); };
+        
+        canvas.onclick = (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } };
+        document.getElementById('close-menu').onclick = () => menu.classList.remove('active');
+        document.getElementById('toggle-all').onclick = () => {
+            const target = !enabledEffects.some(e => e); enabledEffects.fill(target); buildMenu(); saveState();
+        };
 
-        canvas.addEventListener('click', (e) => { if (e.target === canvas) { menu.classList.add('active'); buildMenu(); } });
-        document.getElementById('close-menu').addEventListener('click', () => { menu.classList.remove('active'); });
-        document.getElementById('toggle-all').addEventListener('click', () => {
-            const targetState = !enabledEffects.some(e => e); 
-            enabledEffects.fill(targetState); buildMenu(); cells.forEach(c => c.reset());
-        });
-
-        document.getElementById('randomise').addEventListener('click', () => {
+        document.getElementById('randomise').onclick = () => {
             enabledEffects.fill(false);
-            const orgIndices = EFFECT_NAMES.map((n, i) => n.includes('[O]') ? i : -1).filter(i => i !== -1);
-            const dynIndices = EFFECT_NAMES.map((n, i) => !n.includes('[O]') && !n.includes('[C]') ? i : -1).filter(i => i !== -1);
-            const colIndices = EFFECT_NAMES.map((n, i) => n.includes('[C]') ? i : -1).filter(i => i !== -1);
-            const selected = new Set();
-            selected.add(colIndices[Math.floor(Math.random() * colIndices.length)]);
-            const numOrg = Math.random() < 0.5 ? 3 : 4;
-            fisherYates(orgIndices);
-            for(let i = 0; i < numOrg; i++) selected.add(orgIndices[i]);
-            fisherYates(dynIndices);
-            let dIdx = 0; while(selected.size < 8 && dIdx < dynIndices.length) selected.add(dynIndices[dIdx++]);
-            selected.forEach(idx => enabledEffects[idx] = true);
+            const org = EFFECT_NAMES.map((n, i) => n.includes('[O]') ? i : -1).filter(i => i !== -1);
+            const dyn = EFFECT_NAMES.map((n, i) => !n.includes('[O]') && !n.includes('[C]') ? i : -1).filter(i => i !== -1);
+            const chr = EFFECT_NAMES.map((n, i) => n.includes('[C]') ? i : -1).filter(i => i !== -1);
+            const sel = new Set();
+            sel.add(chr[Math.floor(Math.random() * chr.length)]);
+            const nOrg = Math.random() < 0.5 ? 3 : 4;
+            const shuf = (a) => a.sort(() => Math.random() - 0.5);
+            shuf(org); for(let i=0; i<nOrg; i++) sel.add(org[i]);
+            shuf(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
+            sel.forEach(idx => enabledEffects[idx] = true);
 
-            if (Math.random() < 0.05) {
-                const keys = Object.keys(CYCLIC_PALETTES);
-                config.palette = keys[Math.floor(Math.random() * keys.length)];
-            } else {
-                const keys = Object.keys(STATIC_PALETTES);
-                config.palette = keys[Math.floor(Math.random() * keys.length)];
-            }
+            if (Math.random() < 0.05) config.palette = Object.keys(CYCLIC_PALETTES)[Math.floor(Math.random() * Object.keys(CYCLIC_PALETTES).length)];
+            else config.palette = Object.keys(STATIC_PALETTES)[Math.floor(Math.random() * Object.keys(STATIC_PALETTES).length)];
+            
             config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
             resize(); 
-            // Fix: ensure colors are applied immediately after randomise
             particles.forEach(p => p.assignColor());
             buildMenu();
-        });
+            saveState();
+        };
 
-        window.addEventListener('resize', resize);
-        resize();
+        window.onresize = resize;
         requestAnimationFrame(loop);
     </script>
 </body>
