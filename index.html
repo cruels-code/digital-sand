@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIGITAL SAND  - V4.7.4</title>
+    <title>DIGITAL SAND  - V4.7.8</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #ffffff; --bg: #000; --panel-bg: #050505; --border: #333; --text-muted: #888; }
@@ -42,6 +42,7 @@
         .palette-grid .btn { font-size: 10px; padding: 4px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         #save-indicator { position: fixed; bottom: 10px; right: 10px; font-size: 12px; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+        #fps-counter { position: fixed; top: 15px; left: 15px; font-size: 14px; color: var(--accent); font-family: 'Pixelify Sans', monospace; z-index: 200; display: none; pointer-events: none; text-shadow: 1px 1px 2px #000; }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: var(--border); }
     </style>
@@ -50,12 +51,13 @@
 
     <canvas id="canvas"></canvas>
     <div id="save-indicator">>> SYNC_SUCCESS</div>
+    <div id="fps-counter">FPS: 00</div>
 
     <div id="menu-overlay">
-        <div class="terminal-header"><h2>V4.7.4</h2></div>
+        <div class="terminal-header"><h2>DIGITAL SNAD - V4.7.8 </h2></div>
 
         <div class="settings-panel">
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
                 <div class="setting-group">
                     <span class="setting-label">FIELD_FALLOFF</span>
                     <div style="display: flex; gap: 5px;">
@@ -68,6 +70,13 @@
                     <div style="display: flex; gap: 5px;">
                         <button class="btn" id="btn-velocity-luma">[ VELOCITY_MAP ]</button>
                     </div>
+                </div>
+                <div class="setting-group" style="flex-grow: 1; min-width: 150px;">
+                    <div class="strength-label" style="margin-bottom: 5px;">
+                        <span class="setting-label">MAX_SPEED</span>
+                        <span id="label-max-speed" style="font-size: 12px; color: var(--accent);">15</span>
+                    </div>
+                    <input type="range" id="slider-max-speed" min="2" max="40" value="15">
                 </div>
             </div>
             <div class="setting-group">
@@ -135,7 +144,7 @@
         const PALETTE_DEFS = {
             cyclic: {
                 rainbow_hdr: [{r:255,g:0,b:0},{r:255,g:255,b:0},{r:0,g:255,b:0},{r:0,g:255,b:255},{r:0,g:0,b:255},{r:255,g:0,b:255}],
-                strobe: [{r:0,g:0,b:0},{r:85,g:85,b:85},{r:170,g:170,b:170},{r:255,g:255,b:255}],
+                strobe_hdr: [{r:0,g:0,b:0},{r:85,g:85,b:85},{r:170,g:170,b:170},{r:255,g:255,b:255}],
                 toxic: [{r:173,g:255,b:47},{r:255,g:255,b:0},{r:50,g:205,b:50}],
                 abyss: [{r:0,g:10,b:30},{r:0,g:255,b:255},{r:0,g:100,b:150}],
                 glitch: [{r:255,g:0,b:255},{r:0,g:255,b:255},{r:255,g:255,b:255}],
@@ -178,7 +187,7 @@
             particleCount: 0,
             cells: [],
             lastFrameTime: performance.now(),
-            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 1 },
+            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 1, maxSpeed: 15 },
             enabledEffects: new Array(EFFECTS.length).fill(true),
             effectStrengths: [...DEFAULT_STRENGTHS]
         };
@@ -205,7 +214,7 @@
                     const idx1 = Math.floor(t) % stops.length;
                     const idx2 = isCyclic ? (idx1 + 1) % stops.length : Math.min(idx1 + 1, stops.length - 1);
                     const c = lerpColor(stops[idx1], stops[idx2], t % 1);
-                    lut[i] = (255 << 24) | (c.b << 16) | (c.g << 8) | c.r; // ABGR format
+                    lut[i] = (255 << 24) | (c.b << 16) | (c.g << 8) | c.r; 
                 }
                 return lut;
             };
@@ -215,7 +224,7 @@
         buildLUTs();
 
         function updateCanvasFilter() {
-            if (AppState.config.palette === 'cycle_rainbow_hdr') {
+            if (AppState.config.palette === 'cycle_rainbow_hdr' || AppState.config.palette === 'cycle_strobe_hdr') {
                 $('canvas').style.filter = 'saturate(1.5) contrast(1.2) brightness(1.2)';
             } else {
                 $('canvas').style.filter = 'none';
@@ -237,7 +246,7 @@
             const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             if (token) signInWithCustomToken(auth, token); else signInAnonymously(auth);
         } else {
-            setTimeout(syncLoad, 50); // Fallback init
+            setTimeout(syncLoad, 50);
         }
 
         async function syncSave() {
@@ -264,8 +273,9 @@
             }
             if (data) {
                 Object.assign(AppState.config, data.config);
-                // Backwards compatibility migration
+                if (AppState.config.maxSpeed === undefined) AppState.config.maxSpeed = 15;
                 if (AppState.config.palette === 'cycle_rainbow') AppState.config.palette = 'cycle_rainbow_hdr';
+                if (AppState.config.palette === 'cycle_strobe') AppState.config.palette = 'cycle_strobe_hdr';
                 if (data.enabledEffects) AppState.enabledEffects = data.enabledEffects;
                 if (data.effectStrengths) AppState.effectStrengths = data.effectStrengths;
             }
@@ -286,6 +296,8 @@
             $('btn-soft').classList.toggle('active', !AppState.config.hardEdges);
             $('btn-hard').classList.toggle('active', AppState.config.hardEdges);
             $('btn-velocity-luma').classList.toggle('active', AppState.config.velocityLuma);
+            $('slider-max-speed').value = AppState.config.maxSpeed;
+            $('label-max-speed').innerText = AppState.config.maxSpeed;
         }
 
         function buildMenuDOM() {
@@ -347,9 +359,29 @@
                 syncSave(); 
             };
             
-            canvas.onclick = e => { if (e.target === canvas) { menu.classList.add('active'); buildMenuDOM(); } };
-            $('close-menu').onclick = () => menu.classList.remove('active');
-            menu.onclick = e => { if (e.target === menu) menu.classList.remove('active'); };
+            $('slider-max-speed').oninput = e => {
+                AppState.config.maxSpeed = parseInt(e.target.value);
+                $('label-max-speed').innerText = AppState.config.maxSpeed;
+            };
+            $('slider-max-speed').onchange = syncSave;
+
+            canvas.onclick = e => { 
+                if (e.target === canvas) { 
+                    menu.classList.add('active'); 
+                    $('fps-counter').style.display = 'block';
+                    buildMenuDOM(); 
+                } 
+            };
+            $('close-menu').onclick = () => {
+                menu.classList.remove('active');
+                $('fps-counter').style.display = 'none';
+            };
+            menu.onclick = e => { 
+                if (e.target === menu) {
+                    menu.classList.remove('active');
+                    $('fps-counter').style.display = 'none';
+                }
+            };
             
             $('toggle-all').onclick = () => {
                 const target = !AppState.enabledEffects.some(e => e); 
@@ -465,10 +497,26 @@
             }
         }
 
+        let fpsFrames = 0;
+        let lastFpsTime = 0;
+
         function engineLoop(timestamp) {
             if (AppState.width <= 0 || AppState.height <= 0) return requestAnimationFrame(engineLoop);
             
-            const dt = Math.min(2.0, (timestamp - AppState.lastFrameTime) / CONSTANTS.MS_PER_FRAME); 
+            // FPS COUNTER LOGIC
+            if (!lastFpsTime) lastFpsTime = timestamp;
+            fpsFrames++;
+            if (timestamp - lastFpsTime >= 1000) {
+                $('fps-counter').innerText = `FPS: ${fpsFrames}`;
+                fpsFrames = 0;
+                lastFpsTime = timestamp;
+            }
+
+            // High Refresh Rate Pacing Guard (throttle to ~83Hz max to let 60Hz act normally)
+            const elapsed = timestamp - AppState.lastFrameTime;
+            if (elapsed < 12) return requestAnimationFrame(engineLoop);
+
+            const dt = Math.min(2.0, elapsed / CONSTANTS.MS_PER_FRAME); 
             AppState.lastFrameTime = timestamp;
 
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
@@ -482,12 +530,15 @@
             const currentPalette = PALETTE_LUTS[config.palette];
             const gs = config.grainSize;
             const fPow = Math.pow(CONSTANTS.FRICTION, dt);
-            const lumaDecayPow = Math.pow(CONSTANTS.LUMA_DECAY, dt); // 5x slower decay
-            const isStrobe = config.palette === 'cycle_strobe';
+            const lumaDecayPow = Math.pow(CONSTANTS.LUMA_DECAY, dt); 
+            const isStrobe = config.palette === 'cycle_strobe_hdr';
             const cycleSpeed = isStrobe ? 15.0 : 1.0;
             const useLuma = config.velocityLuma;
             const hardEdges = config.hardEdges;
             const halfW = width / 2; const halfH = height / 2;
+            
+            const maxS = config.maxSpeed;
+            const maxSq = maxS * maxS;
 
             for (let i = 0; i < particleCount; i++) {
                 const idx = i * 6; // Stride 6
@@ -573,6 +624,14 @@
                     }
                 }
 
+                // MAX SPEED LIMIT CLAMP
+                const speedSq = vx*vx + vy*vy;
+                if (speedSq > maxSq) {
+                    const m = maxS / Math.sqrt(speedSq);
+                    vx *= m;
+                    vy *= m;
+                }
+
                 px += vx * CONSTANTS.BASE_SPEED * dt;
                 py += vy * CONSTANTS.BASE_SPEED * dt;
                 vx *= fPow;
@@ -582,8 +641,9 @@
                 if (px < 0) px += width; else if (px >= width) px -= width;
                 if (py < 0) py += height; else if (py >= height) py -= height;
 
-                // Luma Decay Logic (5x slower than velocity decay)
-                const targetLuma = Math.min(1.0, (vx*vx + vy*vy) / 144);
+                // Luma Decay Logic scales with the dynamic max speed
+                const currentV2 = (vx*vx + vy*vy);
+                const targetLuma = Math.min(1.0, currentV2 / maxSq);
                 luma = Math.max(targetLuma, luma * lumaDecayPow);
 
                 particleData[idx] = px; particleData[idx+1] = py;
