@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIGITAL SAND  - V4.7.8</title>
+    <title>DIGITAL SAND - V4.8.3</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #ffffff; --bg: #000; --panel-bg: #050505; --border: #333; --text-muted: #888; }
         body { margin: 0; overflow: hidden; background-color: var(--bg); display: flex; justify-content: center; align-items: center; font-family: 'Pixelify Sans', sans-serif; color: var(--accent); user-select: none; }
-        canvas { display: block; touch-action: none; cursor: crosshair; transition: filter 0.3s ease; }
+        canvas { display: block; touch-action: none; cursor: crosshair; opacity: 0; transition: opacity 1s ease, filter 0.3s ease; }
         
         #menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.15); display: none; flex-direction: column; align-items: center; padding: 20px; z-index: 100; overflow-y: auto; border: 2px solid var(--border); }
         #menu-overlay.active { display: flex; }
         
-        .terminal-header { width: 100%; max-width: 900px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .terminal-header { width: 100%; max-width: 900px; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; box-sizing: border-box; }
         .terminal-header h2 { margin: 0; font-size: 16px; opacity: 0.6; letter-spacing: 1px; }
         
-        .settings-panel { background: var(--panel-bg); padding: 12px; border: 1px solid var(--border); margin-bottom: 15px; width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 10px; }
+        .settings-panel { background: var(--panel-bg); padding: 12px; border: 1px solid var(--border); margin-bottom: 15px; width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; }
         .setting-group { display: flex; flex-direction: column; gap: 6px; }
         .setting-label { font-size: 12px; color: var(--accent); opacity: 0.5; text-transform: uppercase; }
         
-        .controls { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 900px; }
+        .controls { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 900px; box-sizing: border-box; }
         .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 5px 10px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 12px; transition: all 0.1s; text-transform: uppercase; }
         .btn:hover, .btn.active { background: var(--accent); color: var(--bg); }
         
-        details { width: 100%; max-width: 900px; border: 1px solid #1a1a1a; margin-bottom: 4px; background: #080808; }
+        details { width: 100%; max-width: 900px; border: 1px solid #1a1a1a; margin-bottom: 4px; background: #080808; box-sizing: border-box; }
         summary { padding: 8px; cursor: pointer; font-size: 14px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
         details[open] summary { border-bottom: 1px solid var(--border); color: #fff; }
         
@@ -54,7 +54,7 @@
     <div id="fps-counter">FPS: 00</div>
 
     <div id="menu-overlay">
-        <div class="terminal-header"><h2>DIGITAL SNAD - V4.7.8 </h2></div>
+        <div class="terminal-header"><h2>DIGITAL SAND - V4.8.3 (SWEEPING SPREADERS)</h2></div>
 
         <div class="settings-panel">
             <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
@@ -88,13 +88,15 @@
         <div class="controls">
             <button class="btn" id="toggle-all">[ Toggle_All ]</button>
             <button class="btn" id="randomise">[ RANDOMISE ]</button>
+            <button class="btn" id="reset-settings">[ RESET ]</button>
             <button class="btn" id="close-menu">[ RESUME ]</button>
         </div>
         
+        <details><summary><span>[ SPREADERS ]</span><span>+</span></summary><div class="effect-grid" id="cat-spreader"></div></details>
         <details><summary><span>[ ORGANIC ]</span><span>+</span></summary><div class="effect-grid" id="cat-organic"></div></details>
         <details><summary><span>[ FLUID ]</span><span>+</span></summary><div class="effect-grid" id="cat-fluid"></div></details>
         <details><summary><span>[ CHROMA ]</span><span>+</span></summary><div class="effect-grid" id="cat-chroma"></div></details>
-        <div style="height: 60px;"></div>
+        <div style="height: 400px;"></div>
     </div>
 
     <script type="module">
@@ -130,7 +132,11 @@
             "Green Channel Sieve [C]", "Color Gradient Snap [C]", "Hue Orbital Ring [C]", "Inverse Luma Push [C]", 
             "Warm/Cool Shear [C]", "Luma Staircase [C]", "RGB Corner Sort [C]", "Saturation Barrier [C]", 
             "Hue Angular Mapper [C]", "Primary Spin [C]", "Intensity Well [C]", "CMY Divergence [C]", 
-            "Chromatic Wave [C]", "Color Grid Snap [C]"
+            "Chromatic Wave [C]", "Color Grid Snap [C]",
+            
+            // --- NEW SPREADER EFFECTS (Indices 69 to 78) ---
+            "Radial Scatter [S]", "Wave Diffuser [S]", "Outward Spiral [S]", "Noise Expulsion [S]", "Axis Repeller [S]", 
+            "Fractal Burst [S]", "Concentric Repel [S]", "ZigZag Scatter [S]", "Polar Ejector [S]", "Whirlwind Push [S]"
         ];
 
         // Telemetry calibration values
@@ -138,7 +144,10 @@
             100, 28, 200, 200, 200, 200, 200, 7, 100, 100, 100, 100, 100, 100, 100, 100, 200, 5, 200, 200, 
             8, 9, 23, 24, 56, 123, 164, 200, 51, 200, 200, 200, 200, 200, 100, 200, 200, 5, 100, 200, 
             1, 200, 5, 200, 200, 5, 200, 100, 200, 34, 200, 7, 133, 100, 14, 44, 200, 200, 22, 200, 
-            16, 9, 8, 7, 200, 32, 14, 200, 200
+            16, 9, 8, 7, 200, 32, 14, 200, 200,
+            
+            // --- NEW SPREADER STRENGTHS ---
+            200, 200, 200, 200, 200, 200, 200, 200, 200, 200
         ];
 
         const PALETTE_DEFS = {
@@ -276,13 +285,29 @@
                 if (AppState.config.maxSpeed === undefined) AppState.config.maxSpeed = 15;
                 if (AppState.config.palette === 'cycle_rainbow') AppState.config.palette = 'cycle_rainbow_hdr';
                 if (AppState.config.palette === 'cycle_strobe') AppState.config.palette = 'cycle_strobe_hdr';
-                if (data.enabledEffects) AppState.enabledEffects = data.enabledEffects;
-                if (data.effectStrengths) AppState.effectStrengths = data.effectStrengths;
+                
+                // Expand arrays if returning user loads an older save with fewer effects
+                if (data.enabledEffects) {
+                    AppState.enabledEffects = data.enabledEffects;
+                    while (AppState.enabledEffects.length < EFFECTS.length) AppState.enabledEffects.push(true);
+                }
+                if (data.effectStrengths) {
+                    AppState.effectStrengths = data.effectStrengths;
+                    while (AppState.effectStrengths.length < DEFAULT_STRENGTHS.length) {
+                        AppState.effectStrengths.push(DEFAULT_STRENGTHS[AppState.effectStrengths.length]);
+                    }
+                }
             }
             updateUIToggles();
             updateCanvasFilter();
             resizeEngine();
             buildMenuDOM();
+            
+            // Fade in canvas on first load
+            setTimeout(() => {
+                const cvs = document.getElementById('canvas');
+                if (cvs) cvs.style.opacity = '1';
+            }, 50);
         }
 
         // ==========================================
@@ -301,7 +326,7 @@
         }
 
         function buildMenuDOM() {
-            const containers = { '[O]': $('cat-organic'), '[C]': $('cat-chroma'), 'default': $('cat-fluid') };
+            const containers = { '[O]': $('cat-organic'), '[C]': $('cat-chroma'), '[S]': $('cat-spreader'), 'default': $('cat-fluid') };
             Object.values(containers).forEach(c => c.innerHTML = '');
 
             EFFECTS.forEach((name, idx) => {
@@ -327,7 +352,7 @@
 
                 wrapper.append(topRow, slider, sLabel);
                 
-                const type = name.includes('[O]') ? '[O]' : (name.includes('[C]') ? '[C]' : 'default');
+                const type = name.includes('[O]') ? '[O]' : (name.includes('[C]') ? '[C]' : (name.includes('[S]') ? '[S]' : 'default'));
                 containers[type].appendChild(wrapper);
             });
 
@@ -388,17 +413,31 @@
                 AppState.enabledEffects.fill(target); buildMenuDOM(); syncSave();
             };
 
+            $('reset-settings').onclick = () => {
+                localStorage.removeItem('sand_art_state');
+                AppState.config = { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 1, maxSpeed: 15 };
+                AppState.enabledEffects = new Array(EFFECTS.length).fill(true);
+                AppState.effectStrengths = [...DEFAULT_STRENGTHS];
+                updateUIToggles();
+                updateCanvasFilter();
+                resizeEngine(); 
+                buildMenuDOM(); 
+                syncSave();
+            };
+
             $('randomise').onclick = () => {
                 AppState.enabledEffects.fill(false);
                 const getIndices = filterFn => EFFECTS.map((n, i) => filterFn(n) ? i : -1).filter(i => i !== -1);
                 
                 const org = getIndices(n => n.includes('[O]'));
-                const dyn = getIndices(n => !n.includes('[O]') && !n.includes('[C]'));
+                const dyn = getIndices(n => !n.includes('[O]') && !n.includes('[C]') && !n.includes('[S]'));
                 const chr = getIndices(n => n.includes('[C]'));
+                const spr = getIndices(n => n.includes('[S]'));
                 
                 const sel = new Set([chr[Math.floor(Math.random() * chr.length)]]);
                 shuffle(org).slice(0, Math.random() < 0.5 ? 3 : 4).forEach(i => sel.add(i));
                 shuffle(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
+                shuffle(spr).slice(0, 1).forEach(i => sel.add(i)); // Ensure at least 1 spreader is explicitly enabled in UI
                 
                 sel.forEach(idx => AppState.enabledEffects[idx] = true);
                 
@@ -417,31 +456,76 @@
         // 6. PHYSICS & SIMULATION ENGINE
         // ==========================================
         class Cell {
-            constructor(id) {
-                this.id = id; this.x = Math.random() * AppState.width; this.y = Math.random() * AppState.height;
+            constructor(id, isSpreader = false) {
+                this.id = id; 
+                this.isSpreader = isSpreader;
+                this.x = Math.random() * AppState.width; 
+                this.y = Math.random() * AppState.height;
                 this.vx = 0; this.vy = 0; this.targetVx = 0; this.targetVy = 0;
                 this.moveTimer = 0; this.reset();
             }
             reset() {
-                const scale = 0.26 + Math.random() * 0.26;
-                this.sizeW = this.sizeH = Math.min(AppState.width, AppState.height) * scale;
-                const validIndices = AppState.enabledEffects.map((val, idx) => val ? idx : -1).filter(idx => idx !== -1);
-                this.effectIndex = validIndices.length > 0 ? validIndices[Math.floor(Math.random() * validIndices.length)] : 0;
-                this.timer = 0; this.duration = 10000 + Math.random() * 5000;
-                this.rotation = 0; this.strengthBase = (0.6 + Math.random() * 2.4);
+                if (this.isSpreader) {
+                    // Spreaders are now appropriately sized and act as a gentle background sweep
+                    const scale = 0.35 + Math.random() * 0.35; 
+                    this.sizeW = this.sizeH = Math.min(AppState.width, AppState.height) * scale;
+                    
+                    // Pick only from UI-enabled spreaders, or fallback to random spreader
+                    const enabledSpreaders = [];
+                    for (let i = 69; i <= 78; i++) if (AppState.enabledEffects[i]) enabledSpreaders.push(i);
+                    
+                    if (enabledSpreaders.length > 0) {
+                        this.effectIndex = enabledSpreaders[Math.floor(Math.random() * enabledSpreaders.length)];
+                    } else {
+                        this.effectIndex = 69 + Math.floor(Math.random() * 10);
+                    }
+                    
+                    this.timer = 0; 
+                    this.duration = 6000 + Math.random() * 4000;
+                    this.rotation = 0; 
+                    this.strengthBase = 1.5 + Math.random() * 1.5; 
+                } else {
+                    // Normal behavior for organic and fluid cells
+                    const scale = 0.26 + Math.random() * 0.26;
+                    this.sizeW = this.sizeH = Math.min(AppState.width, AppState.height) * scale;
+                    
+                    // Normal cells strictly prohibited from using spreader effects (indices 69+)
+                    const validIndices = AppState.enabledEffects.map((val, idx) => (val && idx < 69) ? idx : -1).filter(idx => idx !== -1);
+                    this.effectIndex = validIndices.length > 0 ? validIndices[Math.floor(Math.random() * validIndices.length)] : 0;
+                    
+                    this.timer = 0; 
+                    this.duration = 10000 + Math.random() * 5000;
+                    this.rotation = 0; 
+                    this.strengthBase = 0.6 + Math.random() * 2.4;
+                }
+                
                 this.changeMovement();
             }
             changeMovement() {
-                const angle = Math.floor(Math.random() * 4) * (Math.PI / 2);
-                const speed = 0.5 + Math.random() * 4.5;
-                this.targetVx = Math.cos(angle) * speed; 
-                this.targetVy = Math.sin(angle) * speed;
-                this.moveTimer = 1000 + Math.random() * 2000;
+                if (this.isSpreader) {
+                    // Spreaders get sweeping, fast, unrestricted movement to cover the whole canvas
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 3.0 + Math.random() * 5.0;
+                    this.targetVx = Math.cos(angle) * speed; 
+                    this.targetVy = Math.sin(angle) * speed;
+                    this.moveTimer = 2000 + Math.random() * 3000;
+                } else {
+                    const angle = Math.floor(Math.random() * 4) * (Math.PI / 2);
+                    const speed = 0.5 + Math.random() * 4.5;
+                    this.targetVx = Math.cos(angle) * speed; 
+                    this.targetVy = Math.sin(angle) * speed;
+                    this.moveTimer = 1000 + Math.random() * 2000;
+                }
             }
             update(dt) {
                 this.timer += dt * CONSTANTS.MS_PER_FRAME;
                 this.moveTimer -= dt * CONSTANTS.MS_PER_FRAME;
-                if (this.timer >= this.duration || !AppState.enabledEffects[this.effectIndex]) this.reset();
+                
+                // Only normal cells will self-reset if their effect gets disabled in the UI. 
+                // The dedicated spreader bypasses this to guarantee baseline dispersion.
+                const isDisabled = !this.isSpreader && !AppState.enabledEffects[this.effectIndex];
+                
+                if (this.timer >= this.duration || isDisabled) this.reset();
                 else if (this.moveTimer <= 0) this.changeMovement();
                 
                 const inertiaEase = 1 - Math.pow(0.96, dt); 
@@ -457,12 +541,23 @@
 
         function updateCellCount() {
             const targetCount = AppState.config.velocityLuma ? CONSTANTS.VELOCITY_CELL_COUNT : CONSTANTS.BASE_CELL_COUNT;
-            while (AppState.cells.length < targetCount) {
-                AppState.cells.push(new Cell(AppState.cells.length));
+            
+            // 1. Maintain exactly 1 dedicated Spreader Cell permanently
+            let spreaders = AppState.cells.filter(c => c.isSpreader);
+            if (spreaders.length === 0) spreaders.push(new Cell('spreader', true));
+            else if (spreaders.length > 1) spreaders = [spreaders[0]];
+            
+            // 2. Maintain normal cells up to the target limit
+            let normals = AppState.cells.filter(c => !c.isSpreader);
+            while (normals.length < targetCount) {
+                normals.push(new Cell(normals.length, false));
             }
-            if (AppState.cells.length > targetCount) {
-                AppState.cells.length = targetCount;
+            if (normals.length > targetCount) {
+                normals.length = targetCount;
             }
+            
+            // 3. Commit new cell roster
+            AppState.cells = [...spreaders, ...normals];
         }
 
         function resizeEngine() {
@@ -512,7 +607,7 @@
                 lastFpsTime = timestamp;
             }
 
-            // High Refresh Rate Pacing Guard (throttle to ~83Hz max to let 60Hz act normally)
+            // High Refresh Rate Pacing Guard
             const elapsed = timestamp - AppState.lastFrameTime;
             if (elapsed < 12) return requestAnimationFrame(engineLoop);
 
@@ -549,7 +644,9 @@
                 // Influence mapping
                 for (let c = 0; c < cells.length; c++) {
                     const cell = cells[c];
-                    if (!enabledEffects[cell.effectIndex]) continue;
+                    // The dedicated spreader overrides the 'enabledEffects' toggle
+                    if (!cell.isSpreader && !enabledEffects[cell.effectIndex]) continue;
+                    
                     let dx = px - cell.x; let dy = py - cell.y;
                     if (dx > halfW) dx -= width; else if (dx < -halfW) dx += width;
                     if (dy > halfH) dy -= height; else if (dy < -halfH) dy += height;
@@ -564,6 +661,7 @@
                         
                         // Core physics registry map
                         switch(cell.effectIndex) {
+                            // --- ORIGINALS ---
                             case 0: vx += (10*(ny*10-nx*10))*s*0.05; break;
                             case 1: vx += Math.cos(angle+1.5+cell.rotation)*s*4; vy += Math.sin(angle+1.5+cell.rotation)*s*4; break;
                             case 2: vx += Math.sin(py*0.01+cell.rotation*5)*s*6; break;
@@ -599,27 +697,39 @@
                             case 32: vx += (Math.round(px/12)*12-px)*s*0.9; break;
                             case 33: vx += ((px+py)%30<(px-py)%30?1:-1)*s*2; break;
                             case 34: vx += (Math.round(px/100)*100-px)*s*0.3; vy += (Math.round(py/60)*60-py)*s*0.3; break;
-                            case 35: const spA = Math.round(angle*4)/4; vx += (Math.cos(spA)*dist-dx)*s*0.4; vy += (Math.sin(spA)*dist-dy)*s*0.4; break;
+                            case 35: { const spA = Math.round(angle*4)/4; vx += (Math.cos(spA)*dist-dx)*s*0.4; vy += (Math.sin(spA)*dist-dy)*s*0.4; break; }
                             case 36: vx += (Math.floor(px/40)*40+(py%40)-px)*s*0.5; break;
-                            case 37: const sdA = angle+dist*0.033; vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break;
+                            case 37: { const sdA = angle+dist*0.033; vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break; }
                             case 38: vx += ((Math.floor(px/300)+Math.floor(py/300))%2==0?1:-1)*s*3; break;
-                            case 39: const dSu = Math.round((px+py)/25)*25; const dDi = Math.round((px-py)/25)*25; vx += ((dSu+dDi)/2-px)*s*0.7; vy += ((dSu-dDi)/2-py)*s*0.7; break;
-                            case 40: const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+cell.rotation; vx += (cell.x+Math.cos(fAng)*dist-px)*s*0.125; vy += (cell.y+Math.sin(fAng)*dist-py)*s*0.125; break;
-                            case 41: const mX = nx*1.5-0.5; const mY = ny*1.5; let tx=0, ty=0, mi=0; while(tx*tx+ty*ty<=4 && mi < 8){ const xt=tx*tx-ty*ty+mX; ty=2*tx*ty+mY; tx=xt; mi++; } if(mi < 8){ vx += Math.cos(angle)*s*6; vy += Math.sin(angle)*s*6;} break;
+                            case 39: { const dSu = Math.round((px+py)/25)*25; const dDi = Math.round((px-py)/25)*25; vx += ((dSu+dDi)/2-px)*s*0.7; vy += ((dSu-dDi)/2-py)*s*0.7; break; }
+                            case 40: { const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+cell.rotation; vx += (cell.x+Math.cos(fAng)*dist-px)*s*0.125; vy += (cell.y+Math.sin(fAng)*dist-py)*s*0.125; break; }
+                            case 41: { const mX = nx*1.5-0.5; const mY = ny*1.5; let tx=0, ty=0, mi=0; while(tx*tx+ty*ty<=4 && mi < 8){ const xt=tx*tx-ty*ty+mX; ty=2*tx*ty+mY; tx=xt; mi++; } if(mi < 8){ vx += Math.cos(angle)*s*6; vy += Math.sin(angle)*s*6;} break; }
                             case 42: vx += (Math.floor(px/300)*300+150-px)*s*0.6; vy += (Math.floor(py/300)*300+150-py)*s*0.6; break;
                             case 43: vx += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.sin(cell.rotation)*s*5:-Math.sin(cell.rotation)*s*5; vy += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.cos(cell.rotation)*s*5:-Math.cos(cell.rotation)*s*5; break;
-                            case 44: const tAng = Math.atan2(py-height, px-width/2); vx += Math.cos(tAng)*s*4; vy += Math.sin(tAng)*s*4; break;
-                            case 45: const ix = Math.round((px-py)/1.73/30)*30*1.73; const iy = Math.round((px+py)/30)*30; vx += (ix+iy/2-px)*s*0.35; vy += (iy/2-py)*s*0.35; break;
+                            case 44: { const tAng = Math.atan2(py-height, px-width/2); vx += Math.cos(tAng)*s*4; vy += Math.sin(tAng)*s*4; break; }
+                            case 45: { const ix = Math.round((px-py)/1.73/30)*30*1.73; const iy = Math.round((px+py)/30)*30; vx += (ix+iy/2-px)*s*0.35; vy += (iy/2-py)*s*0.35; break; }
                             case 46: if(Math.abs(angle-(cell.rotation*2)%(Math.PI*2))<0.1 || Math.abs(angle-(cell.rotation*2)%(Math.PI*2))>Math.PI*2-0.1){ vx += Math.cos(angle)*s*6; vy += Math.sin(angle)*s*6; } break;
-                            case 47: const cxS = Math.round(px/20)*20; const cyS = Math.round(py/20)*20; if(Math.abs(cxS-px)<Math.abs(cyS-py)) vx += (cxS-px)*s*0.9; else vy += (cyS-py)*s*0.9; break;
+                            case 47: { const cxS = Math.round(px/20)*20; const cyS = Math.round(py/20)*20; if(Math.abs(cxS-px)<Math.abs(cyS-py)) vx += (cxS-px)*s*0.9; else vy += (cyS-py)*s*0.9; break; }
                             case 48: if(px%45<5) vy += Math.sin(px*0.01)*s*4; if(py%45<5) vx += Math.cos(py*0.01)*s*4; break;
-                            case 49: const sdTX = Math.floor(cell.x/50)*50+Math.cos(cell.id)*hw; const sdTY = Math.floor(cell.y/50)*50+Math.sin(cell.id)*hh; vx += (sdTX-px)*s*0.048; vy += (sdTY-py)*s*0.048; break;
+                            case 49: { const sdTX = Math.floor(cell.x/50)*50+Math.cos(cell.id)*hw; const sdTY = Math.floor(cell.y/50)*50+Math.sin(cell.id)*hh; vx += (sdTX-px)*s*0.048; vy += (sdTY-py)*s*0.048; break; }
                             case 50: vx += ((Math.floor(px/25)+Math.floor(py/25))%2==0?1:-1)*s*3; vy += -((Math.floor(px/25)+Math.floor(py/25))%2==0?1:-1)*s*3; break;
                             case 51: vx += Math.cos(angle)*s*3; vy += Math.sin(angle)*s*3; break;
                             case 56: vx += (Math.round(px/40)*40-px)*s*3.2; break;
                             case 65: vx += Math.cos(angle)*s*1.25; vy += Math.sin(angle)*s*1.25; break;
                             case 67: vx += Math.cos(angle)*Math.sin(dist*0.1 - cell.rotation)*s*1; break;
-                            case 68: const cgOfs = (phase/360)*20; vx += (Math.round((px + cgOfs)/30)*30 - cgOfs - px)*s*0.6; break;
+                            case 68: { const cgOfs = (phase/360)*20; vx += (Math.round((px + cgOfs)/30)*30 - cgOfs - px)*s*0.6; break; }
+                            
+                            // --- NEW SPREADERS (Indices 69-78) - Randomized Dispersion ---
+                            case 69: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); vx += Math.cos(rA) * rS * 12; vy += Math.sin(rA) * rS * 12; break; }
+                            case 70: { const rS = s * (1.0 + Math.random() * 2.0); vx += (Math.sin(py * 0.05) + (Math.random()-0.5)) * rS * 8; vy += (Math.cos(px * 0.05) + (Math.random()-0.5)) * rS * 8; break; }
+                            case 71: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); vx += (Math.cos(rA) - Math.sin(rA)) * rS * 8; vy += (Math.sin(rA) + Math.cos(rA)) * rS * 8; break; }
+                            case 72: { const rS = s * (1.0 + Math.random() * 2.0); vx += (Math.cos(px * 0.02 + py * 0.02) + (Math.random()-0.5)) * rS * 10; vy += (Math.sin(px * 0.02 - py * 0.02) + (Math.random()-0.5)) * rS * 10; break; }
+                            case 73: { const rS = s * (1.0 + Math.random() * 2.0); vx += (Math.sign(dx) + (Math.random()-0.5)) * rS * 9; vy += (Math.sign(dy) + (Math.random()-0.5)) * rS * 9; break; }
+                            case 74: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); vx += Math.cos(rA * 5) * rS * 9; vy += Math.sin(rA * 5) * rS * 9; break; }
+                            case 75: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); const repel = Math.sin(dist * 0.1); vx += Math.cos(rA) * repel * rS * 10; vy += Math.sin(rA) * repel * rS * 10; break; }
+                            case 76: { const rS = s * (1.0 + Math.random() * 2.0); vx += ((((py / 30 | 0) % 2 === 0) ? 1 : -1) + (Math.random()-0.5)) * rS * 8; vy += ((((px / 30 | 0) % 2 === 0) ? 1 : -1) + (Math.random()-0.5)) * rS * 8; break; }
+                            case 77: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); const m = Math.abs(Math.sin(rA * 3)) * rS * 12; vx += Math.cos(rA) * m; vy += Math.sin(rA) * m; break; }
+                            case 78: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); vx += Math.cos(rA + 0.8) * rS * 9; vy += Math.sin(rA + 0.8) * rS * 9; break; }
                         }
                     }
                 }
