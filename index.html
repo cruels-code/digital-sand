@@ -635,6 +635,18 @@
             const maxS = config.maxSpeed;
             const maxSq = maxS * maxS;
 
+            // STOCHASTIC RESPAWNING (Anti-clumping)
+            // Teleports a tiny fraction of particles each frame to maintain organic distribution
+            const respawnRate = Math.min(50, particleCount);
+            for(let r = 0; r < respawnRate; r++) {
+                const rIdx = Math.floor(Math.random() * particleCount) * 6;
+                particleData[rIdx] = Math.random() * width;       // new x
+                particleData[rIdx+1] = Math.random() * height;    // new y
+                particleData[rIdx+2] = 0;                         // reset vx
+                particleData[rIdx+3] = 0;                         // reset vy
+                particleData[rIdx+5] = 0;                         // reset luma
+            }
+
             for (let i = 0; i < particleCount; i++) {
                 const idx = i * 6; // Stride 6
                 let px = particleData[idx]; let py = particleData[idx+1];
