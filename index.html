@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIGITAL SAND - V4.8.3</title>
+    <title>DIGITAL SAND - V4.8.8 (3D ACCELERATION)</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #ffffff; --bg: #000; --panel-bg: #050505; --border: #333; --text-muted: #888; }
@@ -27,6 +27,8 @@
         details { width: 100%; max-width: 900px; border: 1px solid #1a1a1a; margin-bottom: 4px; background: #080808; box-sizing: border-box; }
         summary { padding: 8px; cursor: pointer; font-size: 14px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
         details[open] summary { border-bottom: 1px solid var(--border); color: #fff; }
+        
+        .group-header { padding: 10px 10px 0 10px; display: flex; justify-content: flex-end; }
         
         .effect-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; padding: 10px; }
         .effect-card { background: #0c0c0c; border: 1px solid #1a1a1a; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
@@ -54,7 +56,7 @@
     <div id="fps-counter">FPS: 00</div>
 
     <div id="menu-overlay">
-        <div class="terminal-header"><h2>DIGITAL SAND - V4.8.3 (SWEEPING SPREADERS)</h2></div>
+        <div class="terminal-header"><h2>DIGITAL SAND - V4.8.8 (3D ACCELERATION)</h2></div>
 
         <div class="settings-panel">
             <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
@@ -69,6 +71,12 @@
                     <span class="setting-label">BRIGHTNESS</span>
                     <div style="display: flex; gap: 5px;">
                         <button class="btn" id="btn-velocity-luma">[ VELOCITY_MAP ]</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <span class="setting-label">ANTI-CLUMP</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn" id="btn-respawn">[ STOCHASTIC_RESPAWN ]</button>
                     </div>
                 </div>
                 <div class="setting-group" style="flex-grow: 1; min-width: 150px;">
@@ -88,14 +96,36 @@
         <div class="controls">
             <button class="btn" id="toggle-all">[ Toggle_All ]</button>
             <button class="btn" id="randomise">[ RANDOMISE ]</button>
+            <button class="btn" id="btn-analysis">[ ANALYSIS ]</button>
             <button class="btn" id="reset-settings">[ RESET ]</button>
             <button class="btn" id="close-menu">[ RESUME ]</button>
         </div>
         
-        <details><summary><span>[ SPREADERS ]</span><span>+</span></summary><div class="effect-grid" id="cat-spreader"></div></details>
-        <details><summary><span>[ ORGANIC ]</span><span>+</span></summary><div class="effect-grid" id="cat-organic"></div></details>
-        <details><summary><span>[ FLUID ]</span><span>+</span></summary><div class="effect-grid" id="cat-fluid"></div></details>
-        <details><summary><span>[ CHROMA ]</span><span>+</span></summary><div class="effect-grid" id="cat-chroma"></div></details>
+        <details>
+            <summary><span>[ SPREADERS ]</span><span>+</span></summary>
+            <div class="group-header"><button class="btn btn-group-toggle" data-type="[S]">[ Toggle_Group ]</button></div>
+            <div class="effect-grid" id="cat-spreader"></div>
+        </details>
+        <details>
+            <summary><span>[ 3D SPACE ]</span><span>+</span></summary>
+            <div class="group-header"><button class="btn btn-group-toggle" data-type="[3D]">[ Toggle_Group ]</button></div>
+            <div class="effect-grid" id="cat-3d"></div>
+        </details>
+        <details>
+            <summary><span>[ ORGANIC ]</span><span>+</span></summary>
+            <div class="group-header"><button class="btn btn-group-toggle" data-type="[O]">[ Toggle_Group ]</button></div>
+            <div class="effect-grid" id="cat-organic"></div>
+        </details>
+        <details>
+            <summary><span>[ FLUID ]</span><span>+</span></summary>
+            <div class="group-header"><button class="btn btn-group-toggle" data-type="default">[ Toggle_Group ]</button></div>
+            <div class="effect-grid" id="cat-fluid"></div>
+        </details>
+        <details>
+            <summary><span>[ CHROMA ]</span><span>+</span></summary>
+            <div class="group-header"><button class="btn btn-group-toggle" data-type="[C]">[ Toggle_Group ]</button></div>
+            <div class="effect-grid" id="cat-chroma"></div>
+        </details>
         <div style="height: 400px;"></div>
     </div>
 
@@ -108,7 +138,7 @@
         // 1. CONSTANTS & CONFIGURATION
         // ==========================================
         const CONSTANTS = {
-            BASE_CELL_COUNT: 5,
+            BASE_CELL_COUNT: 3,
             VELOCITY_CELL_COUNT: 11,
             FRICTION: 0.94,
             LUMA_DECAY: 0.988, 
@@ -134,21 +164,47 @@
             "Hue Angular Mapper [C]", "Primary Spin [C]", "Intensity Well [C]", "CMY Divergence [C]", 
             "Chromatic Wave [C]", "Color Grid Snap [C]",
             
-            // --- NEW SPREADER EFFECTS (Indices 69 to 78) ---
+            // --- SPREADER EFFECTS (Indices 69 to 77) ---
             "Radial Scatter [S]", "Wave Diffuser [S]", "Outward Spiral [S]", "Noise Expulsion [S]", "Axis Repeller [S]", 
-            "Fractal Burst [S]", "Concentric Repel [S]", "ZigZag Scatter [S]", "Polar Ejector [S]", "Whirlwind Push [S]"
+            "Fractal Burst [S]", "Concentric Repel [S]", "ZigZag Scatter [S]", "Whirlwind Push [S]",
+
+            // --- L-SYSTEM EFFECTS (Indices 78 to 82) ---
+            "Dragon Curve Fold [O]", "Sierpinski Repulsion [O]", "Gosper Hex Flow [O]",
+            "Moore Loop Fold [O]", "Peano Grid Sweep [O]",
+
+            // --- 3D EFFECTS (Indices 83 to 92) ---
+            "Rotating 3D Grid [3D]", "Wireframe Sphere [3D]", "Cylinder Roll [3D]", "Double Helix 3D [3D]", "Torus Parametric [3D]", 
+            "Perspective Tunnel [3D]", "Ripple Plane 3D [3D]", "Hyperbolic Funnel [3D]", "Rotating Cube Edges [3D]", "Mobius Strip [3D]"
         ];
 
         // Telemetry calibration values
         const DEFAULT_STRENGTHS = [
-            100, 28, 200, 200, 200, 200, 200, 7, 100, 100, 100, 100, 100, 100, 100, 100, 200, 5, 200, 200, 
-            8, 9, 23, 24, 56, 123, 164, 200, 51, 200, 200, 200, 200, 200, 100, 200, 200, 5, 100, 200, 
-            1, 200, 5, 200, 200, 5, 200, 100, 200, 34, 200, 7, 133, 100, 14, 44, 200, 200, 22, 200, 
-            16, 9, 8, 7, 200, 32, 14, 200, 200,
+            100, 28, 200, 200, 114, 199, 200, 7, 100, 100, 100, 100, 100, 100, 100, 100, 200, 5, 200, 
+            18, 8, 9, 23, 24, 56, 123, 164, 200, 51, 200, 
+            41, 200, 200, 200, 89, 200, 200, 9, 188, 200, 124, 4, 1, 200, 200, 9, 200, 198, 200, 118, 200, 
+            7, 133, 100, 14, 44, 200, 200, 22, 200, 16, 9, 8, 7, 200, 32, 14, 200, 200,
             
-            // --- NEW SPREADER STRENGTHS ---
+            // SPREADER STRENGTHS
+            26, 200, 38, 200, 4, 19, 200, 200, 131,
+
+            // L-SYSTEM STRENGTHS
+            191, 200, 181, 16, 180,
+
+            // 3D STRENGTHS
             200, 200, 200, 200, 200, 200, 200, 200, 200, 200
         ];
+
+        const DEFAULT_ENABLED = new Array(EFFECTS.length).fill(true);
+        // Turn off all spreaders by default except Whirlwind Push (Index 77)
+        for(let i = 69; i <= 76; i++) {
+            DEFAULT_ENABLED[i] = false;
+        }
+        // Turn off all organic & 3D effects by default
+        for(let i = 0; i < EFFECTS.length; i++) {
+            if (EFFECTS[i].includes('[O]') || EFFECTS[i].includes('[3D]')) {
+                DEFAULT_ENABLED[i] = false;
+            }
+        }
 
         const PALETTE_DEFS = {
             cyclic: {
@@ -196,8 +252,8 @@
             particleCount: 0,
             cells: [],
             lastFrameTime: performance.now(),
-            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 1, maxSpeed: 15 },
-            enabledEffects: new Array(EFFECTS.length).fill(true),
+            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 2, maxSpeed: 15, analysisMode: false, stochasticRespawning: true },
+            enabledEffects: [...DEFAULT_ENABLED],
             effectStrengths: [...DEFAULT_STRENGTHS]
         };
 
@@ -283,10 +339,11 @@
             if (data) {
                 Object.assign(AppState.config, data.config);
                 if (AppState.config.maxSpeed === undefined) AppState.config.maxSpeed = 15;
+                if (AppState.config.analysisMode === undefined) AppState.config.analysisMode = false;
+                if (AppState.config.stochasticRespawning === undefined) AppState.config.stochasticRespawning = true;
                 if (AppState.config.palette === 'cycle_rainbow') AppState.config.palette = 'cycle_rainbow_hdr';
                 if (AppState.config.palette === 'cycle_strobe') AppState.config.palette = 'cycle_strobe_hdr';
                 
-                // Expand arrays if returning user loads an older save with fewer effects
                 if (data.enabledEffects) {
                     AppState.enabledEffects = data.enabledEffects;
                     while (AppState.enabledEffects.length < EFFECTS.length) AppState.enabledEffects.push(true);
@@ -321,12 +378,14 @@
             $('btn-soft').classList.toggle('active', !AppState.config.hardEdges);
             $('btn-hard').classList.toggle('active', AppState.config.hardEdges);
             $('btn-velocity-luma').classList.toggle('active', AppState.config.velocityLuma);
+            $('btn-respawn').classList.toggle('active', AppState.config.stochasticRespawning);
+            $('btn-analysis').classList.toggle('active', AppState.config.analysisMode);
             $('slider-max-speed').value = AppState.config.maxSpeed;
             $('label-max-speed').innerText = AppState.config.maxSpeed;
         }
 
         function buildMenuDOM() {
-            const containers = { '[O]': $('cat-organic'), '[C]': $('cat-chroma'), '[S]': $('cat-spreader'), 'default': $('cat-fluid') };
+            const containers = { '[O]': $('cat-organic'), '[C]': $('cat-chroma'), '[S]': $('cat-spreader'), '[3D]': $('cat-3d'), 'default': $('cat-fluid') };
             Object.values(containers).forEach(c => c.innerHTML = '');
 
             EFFECTS.forEach((name, idx) => {
@@ -352,7 +411,7 @@
 
                 wrapper.append(topRow, slider, sLabel);
                 
-                const type = name.includes('[O]') ? '[O]' : (name.includes('[C]') ? '[C]' : (name.includes('[S]') ? '[S]' : 'default'));
+                const type = name.includes('[O]') ? '[O]' : (name.includes('[C]') ? '[C]' : (name.includes('[S]') ? '[S]' : (name.includes('[3D]') ? '[3D]' : 'default')));
                 containers[type].appendChild(wrapper);
             });
 
@@ -384,6 +443,18 @@
                 syncSave(); 
             };
             
+            $('btn-respawn').onclick = () => {
+                AppState.config.stochasticRespawning = !AppState.config.stochasticRespawning;
+                updateUIToggles();
+                syncSave();
+            };
+
+            $('btn-analysis').onclick = () => {
+                AppState.config.analysisMode = !AppState.config.analysisMode;
+                updateUIToggles();
+                syncSave();
+            };
+            
             $('slider-max-speed').oninput = e => {
                 AppState.config.maxSpeed = parseInt(e.target.value);
                 $('label-max-speed').innerText = AppState.config.maxSpeed;
@@ -409,14 +480,43 @@
             };
             
             $('toggle-all').onclick = () => {
-                const target = !AppState.enabledEffects.some(e => e); 
-                AppState.enabledEffects.fill(target); buildMenuDOM(); syncSave();
+                const target = AppState.enabledEffects.includes(false); 
+                AppState.enabledEffects.fill(target); 
+                buildMenuDOM(); 
+                syncSave();
             };
+
+            document.querySelectorAll('.btn-group-toggle').forEach(btn => {
+                btn.onclick = (e) => {
+                    const type = e.target.getAttribute('data-type');
+                    const indices = [];
+                    
+                    EFFECTS.forEach((name, idx) => {
+                        const isOrg = name.includes('[O]');
+                        const isChr = name.includes('[C]');
+                        const isSpr = name.includes('[S]');
+                        const is3D = name.includes('[3D]');
+                        const isFluid = !isOrg && !isChr && !isSpr && !is3D;
+
+                        if (type === '[O]' && isOrg) indices.push(idx);
+                        else if (type === '[C]' && isChr) indices.push(idx);
+                        else if (type === '[S]' && isSpr) indices.push(idx);
+                        else if (type === '[3D]' && is3D) indices.push(idx);
+                        else if (type === 'default' && isFluid) indices.push(idx);
+                    });
+
+                    const anyOff = indices.some(idx => !AppState.enabledEffects[idx]);
+                    indices.forEach(idx => AppState.enabledEffects[idx] = anyOff);
+
+                    buildMenuDOM();
+                    syncSave();
+                };
+            });
 
             $('reset-settings').onclick = () => {
                 localStorage.removeItem('sand_art_state');
-                AppState.config = { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 1, maxSpeed: 15 };
-                AppState.enabledEffects = new Array(EFFECTS.length).fill(true);
+                AppState.config = { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 2, maxSpeed: 15, analysisMode: false, stochasticRespawning: true };
+                AppState.enabledEffects = [...DEFAULT_ENABLED];
                 AppState.effectStrengths = [...DEFAULT_STRENGTHS];
                 updateUIToggles();
                 updateCanvasFilter();
@@ -429,21 +529,25 @@
                 AppState.enabledEffects.fill(false);
                 const getIndices = filterFn => EFFECTS.map((n, i) => filterFn(n) ? i : -1).filter(i => i !== -1);
                 
-                const org = getIndices(n => n.includes('[O]'));
-                const dyn = getIndices(n => !n.includes('[O]') && !n.includes('[C]') && !n.includes('[S]'));
+                const org = getIndices(n => n.includes('[O]') && EFFECTS.indexOf(n) < 78); 
+                const lsys = getIndices(n => n.includes('[O]') && EFFECTS.indexOf(n) >= 78);
+                const d3d = getIndices(n => n.includes('[3D]')); 
+                const dyn = getIndices(n => !n.includes('[O]') && !n.includes('[C]') && !n.includes('[S]') && !n.includes('[3D]'));
                 const chr = getIndices(n => n.includes('[C]'));
                 const spr = getIndices(n => n.includes('[S]'));
                 
                 const sel = new Set([chr[Math.floor(Math.random() * chr.length)]]);
-                shuffle(org).slice(0, Math.random() < 0.5 ? 3 : 4).forEach(i => sel.add(i));
+                
+                const combinedOrganic = shuffle([...org, ...lsys, ...d3d]);
+                combinedOrganic.slice(0, Math.random() < 0.5 ? 3 : 4).forEach(i => sel.add(i));
+                
                 shuffle(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
-                shuffle(spr).slice(0, 1).forEach(i => sel.add(i)); // Ensure at least 1 spreader is explicitly enabled in UI
+                shuffle(spr).slice(0, 1).forEach(i => sel.add(i)); 
                 
                 sel.forEach(idx => AppState.enabledEffects[idx] = true);
                 
                 const allPals = [...Object.keys(PALETTE_DEFS.cyclic).map(k=>`cycle_${k}`), ...Object.keys(PALETTE_DEFS.static)];
                 AppState.config.palette = allPals[Math.floor(Math.random() * allPals.length)];
-                AppState.config.grainSize = [1, 2, 3][Math.floor(Math.random() * 3)];
                 
                 updateCanvasFilter();
                 resizeEngine(); buildMenuDOM(); syncSave();
@@ -466,18 +570,16 @@
             }
             reset() {
                 if (this.isSpreader) {
-                    // Spreaders are now appropriately sized and act as a gentle background sweep
-                    const scale = 0.35 + Math.random() * 0.35; 
+                    const scale = 0.525 + Math.random() * 0.525; 
                     this.sizeW = this.sizeH = Math.min(AppState.width, AppState.height) * scale;
                     
-                    // Pick only from UI-enabled spreaders, or fallback to random spreader
                     const enabledSpreaders = [];
-                    for (let i = 69; i <= 78; i++) if (AppState.enabledEffects[i]) enabledSpreaders.push(i);
+                    for (let i = 69; i <= 77; i++) if (AppState.enabledEffects[i]) enabledSpreaders.push(i);
                     
                     if (enabledSpreaders.length > 0) {
                         this.effectIndex = enabledSpreaders[Math.floor(Math.random() * enabledSpreaders.length)];
                     } else {
-                        this.effectIndex = 69 + Math.floor(Math.random() * 10);
+                        this.effectIndex = 69 + Math.floor(Math.random() * 9);
                     }
                     
                     this.timer = 0; 
@@ -485,12 +587,10 @@
                     this.rotation = 0; 
                     this.strengthBase = 1.5 + Math.random() * 1.5; 
                 } else {
-                    // Normal behavior for organic and fluid cells
-                    const scale = 0.26 + Math.random() * 0.26;
+                    const scale = 0.39 + Math.random() * 0.39;
                     this.sizeW = this.sizeH = Math.min(AppState.width, AppState.height) * scale;
                     
-                    // Normal cells strictly prohibited from using spreader effects (indices 69+)
-                    const validIndices = AppState.enabledEffects.map((val, idx) => (val && idx < 69) ? idx : -1).filter(idx => idx !== -1);
+                    const validIndices = AppState.enabledEffects.map((val, idx) => (val && (idx < 69 || idx > 77)) ? idx : -1).filter(idx => idx !== -1);
                     this.effectIndex = validIndices.length > 0 ? validIndices[Math.floor(Math.random() * validIndices.length)] : 0;
                     
                     this.timer = 0; 
@@ -502,15 +602,14 @@
                 this.changeMovement();
             }
             changeMovement() {
+                const angle = Math.floor(Math.random() * 4) * (Math.PI / 2);
+                
                 if (this.isSpreader) {
-                    // Spreaders get sweeping, fast, unrestricted movement to cover the whole canvas
-                    const angle = Math.random() * Math.PI * 2;
                     const speed = 3.0 + Math.random() * 5.0;
                     this.targetVx = Math.cos(angle) * speed; 
                     this.targetVy = Math.sin(angle) * speed;
                     this.moveTimer = 2000 + Math.random() * 3000;
                 } else {
-                    const angle = Math.floor(Math.random() * 4) * (Math.PI / 2);
                     const speed = 0.5 + Math.random() * 4.5;
                     this.targetVx = Math.cos(angle) * speed; 
                     this.targetVy = Math.sin(angle) * speed;
@@ -521,9 +620,13 @@
                 this.timer += dt * CONSTANTS.MS_PER_FRAME;
                 this.moveTimer -= dt * CONSTANTS.MS_PER_FRAME;
                 
-                // Only normal cells will self-reset if their effect gets disabled in the UI. 
-                // The dedicated spreader bypasses this to guarantee baseline dispersion.
-                const isDisabled = !this.isSpreader && !AppState.enabledEffects[this.effectIndex];
+                let isDisabled = !AppState.enabledEffects[this.effectIndex];
+                
+                if (this.isSpreader) {
+                    let anySpreaderEnabled = false;
+                    for (let i = 69; i <= 77; i++) if (AppState.enabledEffects[i]) anySpreaderEnabled = true;
+                    if (!anySpreaderEnabled) isDisabled = false; // Prevent infinite reset loop if user toggles all spreaders off
+                }
                 
                 if (this.timer >= this.duration || isDisabled) this.reset();
                 else if (this.moveTimer <= 0) this.changeMovement();
@@ -542,12 +645,10 @@
         function updateCellCount() {
             const targetCount = AppState.config.velocityLuma ? CONSTANTS.VELOCITY_CELL_COUNT : CONSTANTS.BASE_CELL_COUNT;
             
-            // 1. Maintain exactly 1 dedicated Spreader Cell permanently
             let spreaders = AppState.cells.filter(c => c.isSpreader);
             if (spreaders.length === 0) spreaders.push(new Cell('spreader', true));
             else if (spreaders.length > 1) spreaders = [spreaders[0]];
             
-            // 2. Maintain normal cells up to the target limit
             let normals = AppState.cells.filter(c => !c.isSpreader);
             while (normals.length < targetCount) {
                 normals.push(new Cell(normals.length, false));
@@ -556,7 +657,6 @@
                 normals.length = targetCount;
             }
             
-            // 3. Commit new cell roster
             AppState.cells = [...spreaders, ...normals];
         }
 
@@ -569,20 +669,21 @@
             const newCount = Math.min(CONSTANTS.MAX_PARTICLES, Math.floor((AppState.width * AppState.height * CONSTANTS.COVERAGE_RATIO) / grainArea)); 
             
             const oldData = AppState.particleData;
-            AppState.particleData = new Float32Array(newCount * 6); // STRIDE 6: [x, y, vx, vy, phase, luma]
-            const isCompatible = oldData && oldData.length === AppState.particleCount * 6;
+            AppState.particleData = new Float32Array(newCount * 7); // STRIDE 7: [x, y, vx, vy, phase, luma, activeFlag]
+            const isCompatible = oldData && oldData.length === AppState.particleCount * 7;
             
             for(let i=0; i<newCount; i++) {
-                const offset = i * 6;
+                const offset = i * 7;
                 if (isCompatible && i < AppState.particleCount) {
-                    AppState.particleData.set(oldData.subarray(offset, offset+6), offset);
+                    AppState.particleData.set(oldData.subarray(offset, offset+7), offset);
                 } else {
                     AppState.particleData[offset] = Math.random() * AppState.width;
                     AppState.particleData[offset+1] = Math.random() * AppState.height;
                     AppState.particleData[offset+2] = 0;
                     AppState.particleData[offset+3] = 0;
                     AppState.particleData[offset+4] = Math.random() * 360;
-                    AppState.particleData[offset+5] = 0; // Initialize Luma history
+                    AppState.particleData[offset+5] = 0; 
+                    AppState.particleData[offset+6] = 1; // 1 = colored, 0 = black
                 }
             }
             AppState.particleCount = newCount;
@@ -598,7 +699,6 @@
         function engineLoop(timestamp) {
             if (AppState.width <= 0 || AppState.height <= 0) return requestAnimationFrame(engineLoop);
             
-            // FPS COUNTER LOGIC
             if (!lastFpsTime) lastFpsTime = timestamp;
             fpsFrames++;
             if (timestamp - lastFpsTime >= 1000) {
@@ -607,7 +707,6 @@
                 lastFpsTime = timestamp;
             }
 
-            // High Refresh Rate Pacing Guard
             const elapsed = timestamp - AppState.lastFrameTime;
             if (elapsed < 12) return requestAnimationFrame(engineLoop);
 
@@ -635,29 +734,29 @@
             const maxS = config.maxSpeed;
             const maxSq = maxS * maxS;
 
-            // STOCHASTIC RESPAWNING (Anti-clumping)
-            // Teleports a tiny fraction of particles each frame to maintain organic distribution
-            const respawnRate = Math.min(50, particleCount);
-            for(let r = 0; r < respawnRate; r++) {
-                const rIdx = Math.floor(Math.random() * particleCount) * 6;
-                particleData[rIdx] = Math.random() * width;       // new x
-                particleData[rIdx+1] = Math.random() * height;    // new y
-                particleData[rIdx+2] = 0;                         // reset vx
-                particleData[rIdx+3] = 0;                         // reset vy
-                particleData[rIdx+5] = 0;                         // reset luma
+            if (config.stochasticRespawning) {
+                const respawnRate = Math.min(10, particleCount);
+                for(let r = 0; r < respawnRate; r++) {
+                    const rIdx = Math.floor(Math.random() * particleCount) * 7;
+                    particleData[rIdx] = Math.random() * width;       
+                    particleData[rIdx+1] = Math.random() * height;    
+                    particleData[rIdx+2] = 0;                         
+                    particleData[rIdx+3] = 0;                         
+                    particleData[rIdx+5] = 0;                         
+                    particleData[rIdx+6] = 0; // 0 = black (waiting to be moved)
+                }
             }
 
             for (let i = 0; i < particleCount; i++) {
-                const idx = i * 6; // Stride 6
+                const idx = i * 7; 
                 let px = particleData[idx]; let py = particleData[idx+1];
                 let vx = particleData[idx+2]; let vy = particleData[idx+3];
                 let phase = particleData[idx+4]; let luma = particleData[idx+5];
+                let activeColorFlag = particleData[idx+6];
 
-                // Influence mapping
                 for (let c = 0; c < cells.length; c++) {
                     const cell = cells[c];
-                    // The dedicated spreader overrides the 'enabledEffects' toggle
-                    if (!cell.isSpreader && !enabledEffects[cell.effectIndex]) continue;
+                    if (!enabledEffects[cell.effectIndex]) continue;
                     
                     let dx = px - cell.x; let dy = py - cell.y;
                     if (dx > halfW) dx -= width; else if (dx < -halfW) dx += width;
@@ -669,11 +768,12 @@
                         const t = Math.max(Math.abs(nx), Math.abs(ny));
                         const edgeForce = hardEdges ? (t < 0.98 ? 1 : 0) : (1-t)*(1-t)*(3-2*(1-t));
                         const s = cell.strengthBase * edgeForce * dt * (effectStrengths[cell.effectIndex] * 0.01);
+                        
+                        if (s !== 0) activeColorFlag = 1; // Flag as moved by a cell
+                        
                         const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
                         
-                        // Core physics registry map
                         switch(cell.effectIndex) {
-                            // --- ORIGINALS ---
                             case 0: vx += (10*(ny*10-nx*10))*s*0.05; break;
                             case 1: vx += Math.cos(angle+1.5+cell.rotation)*s*4; vy += Math.sin(angle+1.5+cell.rotation)*s*4; break;
                             case 2: vx += Math.sin(py*0.01+cell.rotation*5)*s*6; break;
@@ -731,7 +831,7 @@
                             case 67: vx += Math.cos(angle)*Math.sin(dist*0.1 - cell.rotation)*s*1; break;
                             case 68: { const cgOfs = (phase/360)*20; vx += (Math.round((px + cgOfs)/30)*30 - cgOfs - px)*s*0.6; break; }
                             
-                            // --- NEW SPREADERS (Indices 69-78) - Randomized Dispersion ---
+                            // --- SPREADERS (Indices 69-77) ---
                             case 69: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); vx += Math.cos(rA) * rS * 12; vy += Math.sin(rA) * rS * 12; break; }
                             case 70: { const rS = s * (1.0 + Math.random() * 2.0); vx += (Math.sin(py * 0.05) + (Math.random()-0.5)) * rS * 8; vy += (Math.cos(px * 0.05) + (Math.random()-0.5)) * rS * 8; break; }
                             case 71: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); vx += (Math.cos(rA) - Math.sin(rA)) * rS * 8; vy += (Math.sin(rA) + Math.cos(rA)) * rS * 8; break; }
@@ -741,7 +841,149 @@
                             case 75: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); const repel = Math.sin(dist * 0.1); vx += Math.cos(rA) * repel * rS * 10; vy += Math.sin(rA) * repel * rS * 10; break; }
                             case 76: { const rS = s * (1.0 + Math.random() * 2.0); vx += ((((py / 30 | 0) % 2 === 0) ? 1 : -1) + (Math.random()-0.5)) * rS * 8; vy += ((((px / 30 | 0) % 2 === 0) ? 1 : -1) + (Math.random()-0.5)) * rS * 8; break; }
                             case 77: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); const m = Math.abs(Math.sin(rA * 3)) * rS * 12; vx += Math.cos(rA) * m; vy += Math.sin(rA) * m; break; }
-                            case 78: { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); vx += Math.cos(rA + 0.8) * rS * 9; vy += Math.sin(rA + 0.8) * rS * 9; break; }
+
+                            // --- L-SYSTEM EFFECTS (Indices 78-82) ---
+                            case 78: { const dD = (Math.floor(px/40)+Math.floor(py/40))%2===0?1.57:-1.57; vx += (dx*Math.cos(dD)-dy*Math.sin(dD))*s*0.1; vy += (dx*Math.sin(dD)+dy*Math.cos(dD))*s*0.1; break; } // Dragon Curve Fold
+                            case 79: { const tx = (px%60)-30; const ty = (py%52)-26; if (ty > Math.abs(tx)*1.732-26) { vx += Math.sign(tx)*s*5; vy -= s*5; } else { vx -= Math.sign(tx)*s*2; vy += s*2; } break; } // Sierpinski Repulsion
+                            case 80: { const gA = Math.floor(angle/(Math.PI/3))*(Math.PI/3) + Math.PI/6 + cell.rotation; vx += Math.cos(gA)*s*6; vy += Math.sin(gA)*s*6; break; } // Gosper Hex Flow
+                            case 81: { const mA = Math.floor(angle/(Math.PI/2))*(Math.PI/2) + Math.PI/4; vx += Math.cos(mA+dist*0.03)*s*5; vy += Math.sin(mA+dist*0.03)*s*5; break; } // Moore Loop Fold
+                            case 82: { const isX = (Math.floor(px/30)+Math.floor(py/30))%2===0; if(isX) vx += (Math.floor(px/30)%2===0?1:-1)*s*6; else vy += (Math.floor(py/30)%2===0?1:-1)*s*6; break; } // Peano Grid Sweep
+
+                            // --- 3D EFFECTS (Indices 83-92) ---
+                            case 83: { // Rotating 3D Grid
+                                const pitch = Math.sin(cell.rotation * 0.5) * 1.5;
+                                const yaw = cell.rotation;
+                                const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+                                const cosP = Math.cos(pitch), sinP = Math.sin(pitch);
+                                const gx = dx*cosY + dy*sinY*sinP;
+                                const gy = dy*cosP;
+                                vx += (Math.round(gx/25)*25 - gx)*s; 
+                                vy += (Math.round(gy/25)*25 - gy)*s;
+                                break;
+                            }
+                            case 84: { // Wireframe Sphere
+                                const r2 = hw*hw*0.64;
+                                const d2 = dx*dx + dy*dy;
+                                if (d2 < r2) {
+                                    const z = Math.sqrt(r2 - d2);
+                                    const t = cell.rotation * 2;
+                                    const rx = dx * Math.cos(t) - z * Math.sin(t);
+                                    const rz = dx * Math.sin(t) + z * Math.cos(t);
+                                    const lat = Math.asin(dy / (hw*0.8));
+                                    const lon = Math.atan2(rx, rz);
+                                    const snapLat = Math.round(lat / 0.3) * 0.3;
+                                    const snapLon = Math.round(lon / 0.3) * 0.3;
+                                    vx += (Math.sin(snapLon)*hw*0.8*Math.cos(lat) - dx)*s*0.5;
+                                    vy += (Math.sin(snapLat)*hw*0.8 - dy)*s*0.5;
+                                }
+                                break;
+                            }
+                            case 85: { // Cylinder Roll
+                                if (Math.abs(dx) < hw*0.6) {
+                                    const z = Math.sqrt(hw*hw*0.36 - dx*dx);
+                                    const t = cell.rotation * 3;
+                                    const theta = Math.atan2(z, dx) + t;
+                                    const snapTheta = Math.round(theta / (Math.PI/6)) * (Math.PI/6);
+                                    const targetDx = Math.cos(snapTheta - t) * hw * 0.6;
+                                    vx += (targetDx - dx) * s * 2;
+                                    vy += (Math.round(dy / 40) * 40 - dy) * s * 0.5;
+                                }
+                                break;
+                            }
+                            case 86: { // Double Helix 3D
+                                const t = cell.rotation * 4;
+                                const freq = 0.05;
+                                const amp = hw * 0.4;
+                                const wave1X = Math.sin(dy * freq + t) * amp;
+                                const wave1Z = Math.cos(dy * freq + t) * amp;
+                                const wave2X = Math.sin(dy * freq + t + Math.PI) * amp;
+                                const wave2Z = Math.cos(dy * freq + t + Math.PI) * amp;
+                                const pull1 = (wave1X - dx) * s * (wave1Z > 0 ? 3 : 0.5);
+                                const pull2 = (wave2X - dx) * s * (wave2Z > 0 ? 3 : 0.5);
+                                vx += Math.abs(wave1X - dx) < Math.abs(wave2X - dx) ? pull1 : pull2;
+                                vy += (Math.round(dy/20)*20 - dy) * s * 0.1;
+                                break;
+                            }
+                            case 87: { // Torus Parametric
+                                const R = hw * 0.5;
+                                const rR = hw * 0.25;
+                                const t = cell.rotation;
+                                const dCenter = Math.sqrt(dx*dx + (dy/0.5)*(dy/0.5));
+                                if (Math.abs(dCenter - R) < rR) {
+                                    const theta = Math.atan2(dy/0.5, dx);
+                                    const phi = Math.atan2(dCenter - R, 0) + t*5;
+                                    const snapTheta = Math.round(theta / (Math.PI/8)) * (Math.PI/8);
+                                    const snapPhi = Math.round(phi / (Math.PI/4)) * (Math.PI/4);
+                                    vx += (Math.cos(snapTheta)*(R + rR*Math.cos(snapPhi)) - dx) * s;
+                                    vy += (Math.sin(snapTheta)*0.5*(R + rR*Math.cos(snapPhi)) - dy) * s;
+                                }
+                                break;
+                            }
+                            case 88: { // Perspective Tunnel
+                                const zT = (cell.rotation * 200) % 50;
+                                const ringDist = Math.round((dist - zT) / 50) * 50 + zT;
+                                const pullDist = ringDist - dist;
+                                vx += Math.cos(angle) * pullDist * s;
+                                vy += Math.sin(angle) * pullDist * s;
+                                const snapA = Math.round(angle / (Math.PI/6)) * (Math.PI/6);
+                                vx += (Math.cos(snapA)*dist - dx)*s*0.5;
+                                vy += (Math.sin(snapA)*dist - dy)*s*0.5;
+                                break;
+                            }
+                            case 89: { // Ripple Plane 3D
+                                const pitch = 0.8;
+                                const gy = dy / Math.sin(pitch);
+                                const gx = dx;
+                                const rippleZ = Math.sin(Math.sqrt(gx*gx + gy*gy)*0.05 - cell.rotation*5) * 40;
+                                const projY = gy * Math.sin(pitch) - rippleZ * Math.cos(pitch);
+                                vy += (projY - dy) * s * 2;
+                                vx += (Math.round(gx/30)*30 - gx) * s * 0.5;
+                                break;
+                            }
+                            case 90: { // Hyperbolic Funnel
+                                const tF = cell.rotation * 2;
+                                const radiusAtY = Math.sqrt(Math.abs(dy)) * 12;
+                                const thetaF = Math.atan2(1, dx) + tF;
+                                const snapThetaF = Math.round(thetaF / (Math.PI/4)) * (Math.PI/4);
+                                const targetX = Math.cos(snapThetaF - tF) * radiusAtY;
+                                vx += (targetX - dx) * s * 2;
+                                vy += Math.sign(dy) * s * 2;
+                                break;
+                            }
+                            case 91: { // Rotating Cube Edges
+                                const tC = cell.rotation;
+                                const cosT = Math.cos(tC), sinT = Math.sin(tC);
+                                const rx = dx * cosT - dy * sinT;
+                                const ry = dx * sinT + dy * cosT;
+                                const d1 = Math.abs(Math.round(rx/40)*40 - rx);
+                                const d2 = Math.abs(Math.round(ry/40)*40 - ry);
+                                const d3 = Math.abs(Math.round((rx+ry)/40)*40 - (rx+ry));
+                                if (d1 < d2 && d1 < d3) {
+                                    vx += (Math.round(rx/40)*40 - rx)*cosT * s;
+                                    vy += (Math.round(rx/40)*40 - rx)*-sinT * s;
+                                } else if (d2 < d3) {
+                                    vx += (Math.round(ry/40)*40 - ry)*sinT * s;
+                                    vy += (Math.round(ry/40)*40 - ry)*cosT * s;
+                                } else {
+                                    vx += (Math.round((rx+ry)/40)*40 - (rx+ry))*0.7 * s;
+                                    vy += (Math.round((rx+ry)/40)*40 - (rx+ry))*0.7 * s;
+                                }
+                                break;
+                            }
+                            case 92: { // Mobius Strip
+                                const u = Math.atan2(dy, dx);
+                                const vM = (dist - hw*0.5); 
+                                const tM = cell.rotation * 2;
+                                const halfU = u * 0.5 + tM;
+                                const moX = (hw*0.5 + vM * Math.cos(halfU)) * Math.cos(u);
+                                const moY = (hw*0.5 + vM * Math.cos(halfU)) * Math.sin(u) * 0.5;
+                                vx += (moX - dx) * s;
+                                vy += (moY - dy) * s;
+                                if (Math.abs(vM) < hw*0.2) {
+                                   vx += Math.cos(u) * Math.sin(vM*0.5)*s*5;
+                                }
+                                break;
+                            }
                         }
                     }
                 }
@@ -763,7 +1005,6 @@
                 if (px < 0) px += width; else if (px >= width) px -= width;
                 if (py < 0) py += height; else if (py >= height) py -= height;
 
-                // Luma Decay Logic scales with the dynamic max speed
                 const currentV2 = (vx*vx + vy*vy);
                 const targetLuma = Math.min(1.0, currentV2 / maxSq);
                 luma = Math.max(targetLuma, luma * lumaDecayPow);
@@ -771,14 +1012,19 @@
                 particleData[idx] = px; particleData[idx+1] = py;
                 particleData[idx+2] = vx; particleData[idx+3] = vy;
                 particleData[idx+4] = phase; particleData[idx+5] = luma;
+                particleData[idx+6] = activeColorFlag;
 
-                let color = currentPalette[phase | 0];
-                
-                if (useLuma) {
-                    const r = (color & 0xFF) * luma;
-                    const g = ((color >> 8) & 0xFF) * luma;
-                    const b = ((color >> 16) & 0xFF) * luma;
-                    color = (255 << 24) | (b << 16) | (g << 8) | r;
+                let color;
+                if (activeColorFlag === 0) {
+                    color = (255 << 24); // Solid black
+                } else {
+                    color = currentPalette[phase | 0];
+                    if (useLuma) {
+                        const r = (color & 0xFF) * luma;
+                        const g = ((color >> 8) & 0xFF) * luma;
+                        const b = ((color >> 16) & 0xFF) * luma;
+                        color = (255 << 24) | (b << 16) | (g << 8) | r;
+                    }
                 }
 
                 const iPX = px|0; const iPY = py|0;
@@ -799,6 +1045,29 @@
             }
             
             ctx.putImageData(imageData, 0, 0);
+
+            // ANALYSIS MODE RENDERING (Draws over top of the particle buffer)
+            if (config.analysisMode) {
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.font = '12px "Pixelify Sans", sans-serif';
+                ctx.textBaseline = 'bottom';
+                
+                for (let c = 0; c < cells.length; c++) {
+                    const cell = cells[c];
+                    if (!enabledEffects[cell.effectIndex]) continue;
+                    
+                    const hw = cell.sizeW / 2;
+                    const hh = cell.sizeH / 2;
+                    const left = cell.x - hw;
+                    const top = cell.y - hh;
+                    
+                    ctx.strokeRect(left, top, cell.sizeW, cell.sizeH);
+                    ctx.fillText(EFFECTS[cell.effectIndex] || "Unknown", left + 4, top + cell.sizeH - 4);
+                }
+            }
+
             requestAnimationFrame(engineLoop);
         }
 
