@@ -20,7 +20,7 @@
         .setting-group { display: flex; flex-direction: column; gap: 6px; }
         .setting-label { font-size: 12px; color: var(--accent); opacity: 0.5; text-transform: uppercase; }
         
-        .controls { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 900px; box-sizing: border-box; flex-shrink: 0; }
+        .controls { background: var(--panel-bg); padding: 12px; border: 1px solid var(--border); display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 900px; box-sizing: border-box; flex-shrink: 0; }
         .btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 5px 10px; cursor: pointer; font-family: 'Pixelify Sans', sans-serif; font-size: 12px; transition: all 0.1s; text-transform: uppercase; }
         .btn:hover, .btn.active { background: var(--accent); color: var(--bg); }
         
@@ -79,12 +79,19 @@
                         <button class="btn" id="btn-respawn">[ STOCHASTIC_RESPAWN ]</button>
                     </div>
                 </div>
+                <div class="setting-group">
+                    <span class="setting-label">RESOLUTION</span>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn" id="btn-res-1">[ 1x1 ]</button>
+                        <button class="btn" id="btn-res-2">[ 2x2 ]</button>
+                    </div>
+                </div>
                 <div class="setting-group" style="flex-grow: 1; min-width: 150px;">
                     <div class="strength-label" style="margin-bottom: 5px;">
                         <span class="setting-label">MAX_SPEED</span>
-                        <span id="label-max-speed" style="font-size: 12px; color: var(--accent);">15</span>
+                        <span id="label-max-speed" style="font-size: 12px; color: var(--accent);">5</span>
                     </div>
-                    <input type="range" id="slider-max-speed" min="2" max="40" value="15">
+                    <input type="range" id="slider-max-speed" min="2" max="40" value="5">
                 </div>
             </div>
             <div class="setting-group">
@@ -252,7 +259,7 @@
             particleCount: 0,
             cells: [],
             lastFrameTime: performance.now(),
-            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 2, maxSpeed: 15, analysisMode: false, stochasticRespawning: true },
+            config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 2, maxSpeed: 5, analysisMode: false, stochasticRespawning: true },
             enabledEffects: [...DEFAULT_ENABLED],
             effectStrengths: [...DEFAULT_STRENGTHS]
         };
@@ -338,7 +345,7 @@
             }
             if (data) {
                 Object.assign(AppState.config, data.config);
-                if (AppState.config.maxSpeed === undefined) AppState.config.maxSpeed = 15;
+                if (AppState.config.maxSpeed === undefined) AppState.config.maxSpeed = 5;
                 if (AppState.config.analysisMode === undefined) AppState.config.analysisMode = false;
                 if (AppState.config.stochasticRespawning === undefined) AppState.config.stochasticRespawning = true;
                 if (AppState.config.palette === 'cycle_rainbow') AppState.config.palette = 'cycle_rainbow_hdr';
@@ -379,6 +386,8 @@
             $('btn-hard').classList.toggle('active', AppState.config.hardEdges);
             $('btn-velocity-luma').classList.toggle('active', AppState.config.velocityLuma);
             $('btn-respawn').classList.toggle('active', AppState.config.stochasticRespawning);
+            $('btn-res-1').classList.toggle('active', AppState.config.grainSize === 1);
+            $('btn-res-2').classList.toggle('active', AppState.config.grainSize === 2);
             $('btn-analysis').classList.toggle('active', AppState.config.analysisMode);
             $('slider-max-speed').value = AppState.config.maxSpeed;
             $('label-max-speed').innerText = AppState.config.maxSpeed;
@@ -449,6 +458,9 @@
                 syncSave();
             };
 
+            $('btn-res-1').onclick = () => { AppState.config.grainSize = 1; updateUIToggles(); resizeEngine(); syncSave(); };
+            $('btn-res-2').onclick = () => { AppState.config.grainSize = 2; updateUIToggles(); resizeEngine(); syncSave(); };
+
             $('btn-analysis').onclick = () => {
                 AppState.config.analysisMode = !AppState.config.analysisMode;
                 updateUIToggles();
@@ -515,7 +527,7 @@
 
             $('reset-settings').onclick = () => {
                 localStorage.removeItem('sand_art_state');
-                AppState.config = { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 2, maxSpeed: 15, analysisMode: false, stochasticRespawning: true };
+                AppState.config = { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 2, maxSpeed: 5, analysisMode: false, stochasticRespawning: true };
                 AppState.enabledEffects = [...DEFAULT_ENABLED];
                 AppState.effectStrengths = [...DEFAULT_STRENGTHS];
                 updateUIToggles();
@@ -547,6 +559,7 @@
                 
                 const allPals = [...Object.keys(PALETTE_DEFS.cyclic).map(k=>`cycle_${k}`), ...Object.keys(PALETTE_DEFS.static)];
                 AppState.config.palette = allPals[Math.floor(Math.random() * allPals.length)];
+                AppState.config.grainSize = Math.random() > 0.5 ? 1 : 2;
                 
                 updateCanvasFilter();
                 resizeEngine(); buildMenuDOM(); syncSave();
