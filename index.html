@@ -707,7 +707,8 @@
                     const mCtx = mC.getContext('2d', { willReadFrequently: true });
                     mCtx.clearRect(0, 0, AppState.width, AppState.height);
                     
-                    const scale = Math.min(AppState.width / AppState.logoImg.width, AppState.height / AppState.logoImg.height);
+                    // Added a 0.6 multiplier to create a 20% buffer on all sides (100% - 20% left - 20% right = 60%)
+                    const scale = Math.min(AppState.width / AppState.logoImg.width, AppState.height / AppState.logoImg.height) * 0.6;
                     const dw = AppState.logoImg.width * scale;
                     const dh = AppState.logoImg.height * scale;
                     const dx = (AppState.width - dw) / 2;
