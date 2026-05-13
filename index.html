@@ -119,6 +119,11 @@
             <div class="effect-grid" id="cat-3d"></div>
         </details>
         <details>
+            <summary><span>[ CYMATICS ]</span><span>+</span></summary>
+            <div class="group-header"><button class="btn btn-group-toggle" data-type="[A]">[ Toggle_Group ]</button></div>
+            <div class="effect-grid" id="cat-cymatics"></div>
+        </details>
+        <details>
             <summary><span>[ ORGANIC ]</span><span>+</span></summary>
             <div class="group-header"><button class="btn btn-group-toggle" data-type="[O]">[ Toggle_Group ]</button></div>
             <div class="effect-grid" id="cat-organic"></div>
@@ -180,7 +185,10 @@
 
             // --- 3D EFFECTS (Indices 69 to 77) ---
             "Double Helix 3D [3D]", "Hyperbolic Funnel [3D]", "Mobius Strip [3D]", "Perspective Tunnel [3D]", "Ripple Plane 3D [3D]", 
-            "Rotating 3D Grid [3D]", "Rotating Cube Edges [3D]", "Torus Parametric [3D]", "Wireframe Sphere [3D]"
+            "Rotating 3D Grid [3D]", "Rotating Cube Edges [3D]", "Torus Parametric [3D]", "Wireframe Sphere [3D]",
+
+            // --- CYMATICS EFFECTS (Indices 78 to 80) ---
+            "Harmonic Resonance [A]", "Low-Frequency Hum [A]", "Sawtooth Vibration [A]"
         ];
 
         const DEFAULT_STRENGTHS = [
@@ -208,7 +216,10 @@
 
             // 3D (69-77)
             200, 200, 200, 200, 200, 
-            200, 200, 200, 200
+            200, 200, 200, 200,
+
+            // CYMATICS (78-80)
+            200, 200, 200
         ];
 
         const DEFAULT_ENABLED = new Array(EFFECTS.length).fill(true);
@@ -394,7 +405,7 @@
         }
 
         function buildMenuDOM() {
-            const containers = { '[O]': $('cat-organic'), '[C]': $('cat-chroma'), '[S]': $('cat-spreader'), '[3D]': $('cat-3d'), 'default': $('cat-fluid') };
+            const containers = { '[O]': $('cat-organic'), '[C]': $('cat-chroma'), '[S]': $('cat-spreader'), '[3D]': $('cat-3d'), '[A]': $('cat-cymatics'), 'default': $('cat-fluid') };
             Object.values(containers).forEach(c => c.innerHTML = '');
 
             EFFECTS.forEach((name, idx) => {
@@ -420,7 +431,7 @@
 
                 wrapper.append(topRow, slider, sLabel);
                 
-                const type = name.includes('[O]') ? '[O]' : (name.includes('[C]') ? '[C]' : (name.includes('[S]') ? '[S]' : (name.includes('[3D]') ? '[3D]' : 'default')));
+                const type = name.includes('[O]') ? '[O]' : (name.includes('[C]') ? '[C]' : (name.includes('[S]') ? '[S]' : (name.includes('[3D]') ? '[3D]' : (name.includes('[A]') ? '[A]' : 'default'))));
                 containers[type].appendChild(wrapper);
             });
 
@@ -508,12 +519,14 @@
                         const isChr = name.includes('[C]');
                         const isSpr = name.includes('[S]');
                         const is3D = name.includes('[3D]');
-                        const isFluid = !isOrg && !isChr && !isSpr && !is3D;
+                        const isCym = name.includes('[A]');
+                        const isFluid = !isOrg && !isChr && !isSpr && !is3D && !isCym;
 
                         if (type === '[O]' && isOrg) indices.push(idx);
                         else if (type === '[C]' && isChr) indices.push(idx);
                         else if (type === '[S]' && isSpr) indices.push(idx);
                         else if (type === '[3D]' && is3D) indices.push(idx);
+                        else if (type === '[A]' && isCym) indices.push(idx);
                         else if (type === 'default' && isFluid) indices.push(idx);
                     });
 
@@ -543,13 +556,14 @@
                 
                 const org = getIndices(n => n.includes('[O]')); 
                 const d3d = getIndices(n => n.includes('[3D]')); 
-                const dyn = getIndices(n => !n.includes('[O]') && !n.includes('[C]') && !n.includes('[S]') && !n.includes('[3D]'));
+                const cym = getIndices(n => n.includes('[A]')); 
+                const dyn = getIndices(n => !n.includes('[O]') && !n.includes('[C]') && !n.includes('[S]') && !n.includes('[3D]') && !n.includes('[A]'));
                 const chr = getIndices(n => n.includes('[C]'));
                 const spr = getIndices(n => n.includes('[S]'));
                 
                 const sel = new Set([chr[Math.floor(Math.random() * chr.length)]]);
                 
-                const combinedOrganic = shuffle([...org, ...d3d]);
+                const combinedOrganic = shuffle([...org, ...d3d, ...cym]);
                 combinedOrganic.slice(0, Math.random() < 0.5 ? 3 : 4).forEach(i => sel.add(i));
                 
                 shuffle(dyn); let di=0; while(sel.size<8 && di<dyn.length) sel.add(dyn[di++]);
@@ -872,6 +886,11 @@
                             case 75: /* Rotating Cube Edges [3D] */ { const tC = cell.rotation; const cosT = Math.cos(tC), sinT = Math.sin(tC); const rx = dx * cosT - dy * sinT; const ry = dx * sinT + dy * cosT; const d1 = Math.abs(Math.round(rx/40)*40 - rx); const d2 = Math.abs(Math.round(ry/40)*40 - ry); const d3 = Math.abs(Math.round((rx+ry)/40)*40 - (rx+ry)); if (d1 < d2 && d1 < d3) { vx += (Math.round(rx/40)*40 - rx)*cosT * s; vy += (Math.round(rx/40)*40 - rx)*-sinT * s; } else if (d2 < d3) { vx += (Math.round(ry/40)*40 - ry)*sinT * s; vy += (Math.round(ry/40)*40 - ry)*cosT * s; } else { vx += (Math.round((rx+ry)/40)*40 - (rx+ry))*0.7 * s; vy += (Math.round((rx+ry)/40)*40 - (rx+ry))*0.7 * s; } break; }
                             case 76: /* Torus Parametric [3D] */ { const R = hw * 0.5; const rR = hw * 0.25; const t = cell.rotation; const dCenter = Math.sqrt(dx*dx + (dy/0.5)*(dy/0.5)); if (Math.abs(dCenter - R) < rR) { const theta = Math.atan2(dy/0.5, dx); const phi = Math.atan2(dCenter - R, 0) + t*5; const snapTheta = Math.round(theta / (Math.PI/8)) * (Math.PI/8); const snapPhi = Math.round(phi / (Math.PI/4)) * (Math.PI/4); vx += (Math.cos(snapTheta)*(R + rR*Math.cos(snapPhi)) - dx) * s; vy += (Math.sin(snapTheta)*0.5*(R + rR*Math.cos(snapPhi)) - dy) * s; } break; }
                             case 77: /* Wireframe Sphere [3D] */ { const r2 = hw*hw*0.64; const d2 = dx*dx + dy*dy; if (d2 < r2) { const z = Math.sqrt(r2 - d2); const t = cell.rotation * 2; const rx = dx * Math.cos(t) - z * Math.sin(t); const rz = dx * Math.sin(t) + z * Math.cos(t); const lat = Math.asin(dy / (hw*0.8)); const lon = Math.atan2(rx, rz); const snapLat = Math.round(lat / 0.3) * 0.3; const snapLon = Math.round(lon / 0.3) * 0.3; vx += (Math.sin(snapLon)*hw*0.8*Math.cos(lat) - dx)*s*0.5; vy += (Math.sin(snapLat)*hw*0.8 - dy)*s*0.5; } break; }
+                            
+                            // Cymatics
+                            case 78: /* Harmonic Resonance [A] */ { const freq = 0.15; const force = Math.sin(dist * freq) * Math.cos(dist * freq); vx -= Math.cos(angle) * force * s * 50; vy -= Math.sin(angle) * force * s * 50; break; }
+                            case 79: /* Low-Frequency Hum [A] */ { const freq = 0.03; const t = cell.rotation * 2; const fX = Math.sin(px * freq + t) * Math.cos(px * freq + t); const fY = Math.sin(py * freq + t) * Math.cos(py * freq + t); vx -= fX * s * 30; vy -= fY * s * 30; break; }
+                            case 80: /* Sawtooth Vibration [A] */ { const freq = 60; const sx = ((px + cell.rotation*30) % freq) / freq - 0.5; const sy = ((py - cell.rotation*30) % freq) / freq - 0.5; vx -= Math.sign(sx) * s * 6; vy -= Math.sign(sy) * s * 6; break; }
                         }
                     }
                 }
