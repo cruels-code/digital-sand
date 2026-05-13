@@ -272,7 +272,9 @@
             lastFrameTime: performance.now(),
             config: { hardEdges: false, velocityLuma: false, palette: 'cycle_rainbow_hdr', grainSize: 2, maxSpeed: 5, analysisMode: false, stochasticRespawning: true },
             enabledEffects: [...DEFAULT_ENABLED],
-            effectStrengths: [...DEFAULT_STRENGTHS]
+            effectStrengths: [...DEFAULT_STRENGTHS],
+            logoImg: null,
+            startupTimer: 0
         };
 
         // ==========================================
@@ -375,14 +377,8 @@
             }
             updateUIToggles();
             updateCanvasFilter();
-            resizeEngine();
+            if (initSimDone) resizeEngine();
             buildMenuDOM();
-            
-            // Fade in canvas on first load
-            setTimeout(() => {
-                const cvs = document.getElementById('canvas');
-                if (cvs) cvs.style.opacity = '1';
-            }, 50);
         }
 
         // ==========================================
@@ -629,7 +625,6 @@
             }
             changeMovement() {
                 const currentAxis = (Math.abs(this.targetVx) > Math.abs(this.targetVy)) ? 'x' : 'y';
-                // 85% chance to make a sharp 90-degree turn, 15% chance to reverse or continue forward
                 const newAxis = Math.random() < 0.85 ? (currentAxis === 'x' ? 'y' : 'x') : currentAxis;
                 const dir = Math.random() < 0.5 ? 1 : -1;
 
@@ -663,19 +658,16 @@
                 if (this.timer >= this.duration || isDisabled) this.reset();
                 else if (this.moveTimer <= 0) this.changeMovement();
                 
-                // Mechanical acceleration: quickly speed up to target velocity
                 const inertiaEase = 1 - Math.pow(0.92, dt); 
                 this.vx += (this.targetVx - this.vx) * inertiaEase;
                 this.vy += (this.targetVy - this.vy) * inertiaEase;
 
-                // Mechanical braking: aggressively bleed off momentum on the inactive axis to carve sharp corners
                 if (this.targetVx === 0) this.vx *= Math.pow(0.5, dt);
                 if (this.targetVy === 0) this.vy *= Math.pow(0.5, dt);
 
                 this.x += this.vx * dt; 
                 this.y += this.vy * dt;
                 
-                // Slow down internal rotation so the mechanical shapes stay more rigid and structured
                 this.rotation += 0.005 * dt;
                 
                 if (this.x < 0) this.x += AppState.width; else if (this.x >= AppState.width) this.x -= AppState.width;
@@ -706,11 +698,45 @@
             AppState.height = canvas.height = Math.floor(window.innerHeight);
             if (AppState.width <= 0 || AppState.height <= 0) return;
             
+            let validPixels = null;
+            if (AppState.logoImg && AppState.startupTimer > 0) {
+                try {
+                    const mC = document.createElement('canvas');
+                    mC.width = AppState.width; 
+                    mC.height = AppState.height;
+                    const mCtx = mC.getContext('2d', { willReadFrequently: true });
+                    mCtx.clearRect(0, 0, AppState.width, AppState.height);
+                    
+                    const scale = Math.min(AppState.width / AppState.logoImg.width, AppState.height / AppState.logoImg.height);
+                    const dw = AppState.logoImg.width * scale;
+                    const dh = AppState.logoImg.height * scale;
+                    const dx = (AppState.width - dw) / 2;
+                    const dy = (AppState.height - dh) / 2;
+                    
+                    mCtx.drawImage(AppState.logoImg, dx, dy, dw, dh);
+                    const imgData = mCtx.getImageData(0, 0, AppState.width, AppState.height).data;
+                    validPixels = [];
+                    
+                    for(let i = 0; i < imgData.length; i += 4) {
+                        // Strict check: Alpha mask is strong AND pixel is visibly white-ish.
+                        if(imgData[i+3] > 128 && imgData[i] > 128) {
+                            validPixels.push({
+                                x: (i/4) % AppState.width, 
+                                y: Math.floor((i/4) / AppState.width)
+                            });
+                        }
+                    }
+                } catch(e) { 
+                    console.error("Canvas read error (Likely CORS issue from running without a local server):", e);
+                    validPixels = null; 
+                }
+            }
+
             const grainArea = AppState.config.grainSize * AppState.config.grainSize;
             const newCount = Math.min(CONSTANTS.MAX_PARTICLES, Math.floor((AppState.width * AppState.height * CONSTANTS.COVERAGE_RATIO) / grainArea)); 
             
             const oldData = AppState.particleData;
-            AppState.particleData = new Float32Array(newCount * 7); // STRIDE 7: [x, y, vx, vy, phase, luma, activeFlag]
+            AppState.particleData = new Float32Array(newCount * 7); 
             const isCompatible = oldData && oldData.length === AppState.particleCount * 7;
             
             for(let i=0; i<newCount; i++) {
@@ -718,13 +744,19 @@
                 if (isCompatible && i < AppState.particleCount) {
                     AppState.particleData.set(oldData.subarray(offset, offset+7), offset);
                 } else {
-                    AppState.particleData[offset] = Math.random() * AppState.width;
-                    AppState.particleData[offset+1] = Math.random() * AppState.height;
+                    if (validPixels && validPixels.length > 0) {
+                        const rp = validPixels[Math.floor(Math.random() * validPixels.length)];
+                        AppState.particleData[offset] = rp.x + Math.random();
+                        AppState.particleData[offset+1] = rp.y + Math.random();
+                    } else {
+                        AppState.particleData[offset] = Math.random() * AppState.width;
+                        AppState.particleData[offset+1] = Math.random() * AppState.height;
+                    }
                     AppState.particleData[offset+2] = 0;
                     AppState.particleData[offset+3] = 0;
                     AppState.particleData[offset+4] = Math.random() * 360;
                     AppState.particleData[offset+5] = 0; 
-                    AppState.particleData[offset+6] = 1; // 1 = colored, 0 = black
+                    AppState.particleData[offset+6] = 1; 
                 }
             }
             AppState.particleCount = newCount;
@@ -754,9 +786,17 @@
             const dt = Math.min(2.0, elapsed / CONSTANTS.MS_PER_FRAME); 
             AppState.lastFrameTime = timestamp;
 
+            const isStartingUp = AppState.startupTimer > 0;
+            if (isStartingUp) {
+                AppState.startupTimer -= dt * CONSTANTS.MS_PER_FRAME;
+            }
+
             ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; 
             ctx.fillRect(0, 0, AppState.width, AppState.height);
-            AppState.cells.forEach(cell => cell.update(dt));
+            
+            if (!isStartingUp) {
+                AppState.cells.forEach(cell => cell.update(dt));
+            }
             
             const imageData = ctx.getImageData(0, 0, AppState.width, AppState.height);
             const data32 = new Uint32Array(imageData.data.buffer);
@@ -774,7 +814,7 @@
             const maxS = config.maxSpeed;
             const maxSq = maxS * maxS;
 
-            if (config.stochasticRespawning) {
+            if (config.stochasticRespawning && !isStartingUp) {
                 const respawnRate = Math.min(10, particleCount);
                 for(let r = 0; r < respawnRate; r++) {
                     const rIdx = Math.floor(Math.random() * particleCount) * 7;
@@ -794,149 +834,157 @@
                 let phase = particleData[idx+4]; let luma = particleData[idx+5];
                 let activeColorFlag = particleData[idx+6];
 
-                for (let c = 0; c < cells.length; c++) {
-                    const cell = cells[c];
-                    if (!enabledEffects[cell.effectIndex]) continue;
-                    
-                    let dx = px - cell.x; let dy = py - cell.y;
-                    if (dx > halfW) dx -= width; else if (dx < -halfW) dx += width;
-                    if (dy > halfH) dy -= height; else if (dy < -halfH) dy += height;
-                    const hw = cell.sizeW / 2; const hh = cell.sizeH / 2;
-                    
-                    if (Math.abs(dx) < hw && Math.abs(dy) < hh) {
-                        const nx = dx/hw; const ny = dy/hh;
-                        const t = Math.max(Math.abs(nx), Math.abs(ny));
-                        const edgeForce = hardEdges ? (t < 0.98 ? 1 : 0) : (1-t)*(1-t)*(3-2*(1-t));
-                        const s = cell.strengthBase * edgeForce * dt * (effectStrengths[cell.effectIndex] * 0.01);
+                if (!isStartingUp) {
+                    for (let c = 0; c < cells.length; c++) {
+                        const cell = cells[c];
+                        if (!enabledEffects[cell.effectIndex]) continue;
                         
-                        if (s !== 0) activeColorFlag = 1; // Flag as moved by a cell
+                        let dx = px - cell.x; let dy = py - cell.y;
+                        if (dx > halfW) dx -= width; else if (dx < -halfW) dx += width;
+                        if (dy > halfH) dy -= height; else if (dy < -halfH) dy += height;
+                        const hw = cell.sizeW / 2; const hh = cell.sizeH / 2;
                         
-                        const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
-                        
-                        switch(cell.effectIndex) {
-                            // Fluid
-                            case 0: /* Bubble Repulsion */ if (dist < hw/2) { vx += Math.cos(angle)*s*8; vy += Math.sin(angle)*s*8; } break;
-                            case 1: /* Chaos Mix */ vx += (Math.random()-0.5)*s*10; vy += (Math.random()-0.5)*s*10; break;
-                            case 2: /* Concentric Spin */ vx += Math.cos(angle+1.57)*(Math.floor(dist/20)%2==0?1:-1)*s*4; vy += Math.sin(angle+1.57)*(Math.floor(dist/20)%2==0?1:-1)*s*4; break;
-                            case 3: /* Convergence */ vx -= Math.cos(angle)*s*4; vy -= Math.sin(angle)*s*4; break;
-                            case 4: /* Cross Wind */ vx += Math.sin(cell.rotation)*s*5; vy += Math.cos(cell.rotation)*s*5; break;
-                            case 5: /* Divergence */ vx += Math.cos(angle)*s*5; vy += Math.sin(angle)*s*5; break;
-                            case 6: /* DNA Spiral */ vx += Math.sin(py*0.05+cell.rotation*2)*s*5; break;
-                            case 7: /* Expansion Pulse */ vx += Math.cos(angle)*Math.sin(cell.rotation*4)*5*s; vy += Math.sin(angle)*Math.sin(cell.rotation*4)*5*s; break;
-                            case 8: /* Galaxy Spiral */ vx += Math.cos(angle+1.5+cell.rotation)*s*4; vy += Math.sin(angle+1.5+cell.rotation)*s*4; break;
-                            case 9: /* Lorenz Attractor */ vx += (10*(ny*10-nx*10))*s*0.05; break;
-                            case 10: /* Magnetic North */ vy -= 2*s; break;
-                            case 11: /* Maze Runner */ vx += ((Math.floor(px/20)+Math.floor(py/20))%2==0?1:-1)*s*4; break;
-                            case 12: /* Mirror Center */ vx -= (nx*5)*s; break;
-                            case 13: /* Orbitals */ vx += Math.cos(angle+1.57)*Math.sin(dist*0.15-cell.rotation*4)*s*5; vy += Math.sin(angle+1.57)*Math.sin(dist*0.15-cell.rotation*4)*s*5; break;
-                            case 14: /* Perlin Drift */ vx += Math.cos(px*0.01+py*0.01+cell.rotation)*s*4; vy += Math.sin(px*0.01-py*0.01+cell.rotation)*s*4; break;
-                            case 15: /* Radial Comb */ if (Math.abs(Math.sin((angle+cell.rotation)*8))>0.7){ vx += Math.cos(angle+1.57)*s*4; vy += Math.sin(angle+1.57)*s*4; } break;
-                            case 16: /* Ripples */ vx += Math.cos(angle)*Math.sin(dist*0.1-cell.rotation*10)*s*3; vy += Math.sin(angle)*Math.sin(dist*0.1-cell.rotation*10)*s*3; break;
-                            case 17: /* Shear */ vx += (ny>0?1:-1)*s*5; break;
-                            case 18: /* Sine Sieve */ if (Math.sin(px*0.1)*Math.sin(py*0.1)>0) vx += 2*s; break;
-                            case 19: /* Square Wave */ vx += Math.sign(Math.sin(py*0.1))*s*3; break;
-                            case 20: /* Tangent Twist */ vx += Math.tan(nx*0.5)*s*2; vy += Math.cos(ny*3)*s*3; break;
-                            case 21: /* Turbulent Flow */ vx += Math.sin(py*0.05+cell.rotation*0.5)*s*3; vy += Math.sin(px*0.05-cell.rotation*0.5)*s*3; break;
-                            case 22: /* Vertical Gusts */ vy += Math.cos(px*0.02+cell.rotation*3)*s*5; break;
-                            case 23: /* Vortex */ vx += Math.cos(angle+1.57)*s*4; vy += Math.sin(angle+1.57)*s*4; break;
-                            case 24: /* Warp Drive */ vx += Math.cos(angle)*(1+s*3); vy += Math.sin(angle)*(1+s*3); break;
-                            case 25: /* Wind Gusts */ vx += Math.sin(py*0.01+cell.rotation*5)*s*6; break;
-                            case 26: /* Zoom Out */ vx += dx*0.05*s; vy += dy*0.05*s; break;
-
-                            // Organic
-                            case 27: /* Binary Tree [O] */ { const tAng = Math.atan2(py-height, px-width/2); vx += Math.cos(tAng)*s*4; vy += Math.sin(tAng)*s*4; break; }
-                            case 28: /* Celtic Knots [O] */ { const gridX = Math.round(px / 60) * 60; const gridY = Math.round(py / 60) * 60; const lD = Math.sqrt((px-gridX)**2 + (py-gridY)**2); if (lD > 0) { const targetR = lD > 30 ? 45 : 15; const pull = (targetR - lD) * s * 0.3; vx += ((px-gridX)/lD) * pull; vy += ((py-gridY)/lD) * pull; vx += ((py-gridY)/lD) * s * 2; vy -= ((px-gridX)/lD) * s * 2; } break; }
-                            case 29: /* Checkerboard Push [O] */ vx += ((Math.floor(px/300)+Math.floor(py/300))%2==0?1:-1)*s*3; break;
-                            case 30: /* Chevron Tiling [O] */ { const segX = Math.floor(px / 40); const dir = (segX % 2 === 0) ? 1 : -1; const yTarget = Math.round((py - px * dir * 0.5) / 30) * 30 + px * dir * 0.5; vy += (yTarget - py) * s * 0.8; vx += dir * s * 2; break; }
-                            case 31: /* Circuit Board [O] */ { const cxS = Math.round(px/20)*20; const cyS = Math.round(py/20)*20; if(Math.abs(cxS-px)<Math.abs(cyS-py)) vx += (cxS-px)*s*0.9; else vy += (cyS-py)*s*0.9; break; }
-                            case 32: /* Concentric Squares [O] */ vx += (Math.round(dx/375)*375-dx)*s*0.5; vy += (Math.round(dy/375)*375-dy)*s*0.5; break;
-                            case 33: /* Crystallize [O] */ vx += (Math.round(px/1125)*1125-px)*s*0.6; vy += (Math.round(py/1125)*1125-py)*s*0.6; break;
-                            case 34: /* Diagonal Crosshatch [O] */ vx += ((px+py)%30<(px-py)%30?1:-1)*s*2; break;
-                            case 35: /* Diamond Dot Array [O] */ { const dSu = Math.round((px+py)/25)*25; const dDi = Math.round((px-py)/25)*25; vx += ((dSu+dDi)/2-px)*s*0.7; vy += ((dSu-dDi)/2-py)*s*0.7; break; }
-                            case 36: /* Diamond Lattice [O] */ vx += Math.cos((Math.abs(px%40-20)+Math.abs(py%40-20)))*s*2; break;
-                            case 37: /* Dotted Grid [O] */ vx += (Math.round(px/15)*15-px)*s*0.8; vy += (Math.round(py/15)*15-py)*s*0.8; break;
-                            case 38: /* Dotted Spirals [O] */ { const sdA = angle+dist*0.033; vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break; }
-                            case 39: /* Dragon Curve Fold [O] */ { const dD = (Math.floor(px/40)+Math.floor(py/40))%2===0?1.57:-1.57; vx += (dx*Math.cos(dD)-dy*Math.sin(dD))*s*0.1; vy += (dx*Math.sin(dD)+dy*Math.cos(dD))*s*0.1; break; }
-                            case 40: /* Fibonacci Spiral [O] */ { const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+cell.rotation; vx += (cell.x+Math.cos(fAng)*dist-px)*s*0.125; vy += (cell.y+Math.sin(fAng)*dist-py)*s*0.125; break; }
-                            case 41: /* Gosper Hex Flow [O] */ { const gA = Math.floor(angle/(Math.PI/3))*(Math.PI/3) + Math.PI/6 + cell.rotation; vx += Math.cos(gA)*s*6; vy += Math.sin(gA)*s*6; break; }
-                            case 42: /* Hex Grid [O] */ vx += (Math.round(px/30)*30-px)*s*0.4; vy += (Math.round(py/25)*25-py)*s*0.4; break;
-                            case 43: /* Hexagonal Rings [O] */ { const a = Math.atan2(dy, dx); const a6 = Math.round(a / (Math.PI/3)) * (Math.PI/3); const rHex = dist * Math.cos(a - a6); const targetR = Math.round(rHex / 30) * 30; const pull = (targetR - rHex) * s * 0.4; vx += Math.cos(a6) * pull; vy += Math.sin(a6) * pull; break; }
-                            case 44: /* Hilbert Curve [O] */ vx += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.sin(cell.rotation)*s*5:-Math.sin(cell.rotation)*s*5; vy += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.cos(cell.rotation)*s*5:-Math.cos(cell.rotation)*s*5; break;
-                            case 45: /* Honeycomb [O] */ vx += (Math.round(px/100)*100-px)*s*0.3; vy += (Math.round(py/60)*60-py)*s*0.3; break;
-                            case 46: /* Isometric Cube [O] */ { const ix = Math.round((px-py)/1.73/30)*30*1.73; const iy = Math.round((px+py)/30)*30; vx += (ix+iy/2-px)*s*0.35; vy += (iy/2-py)*s*0.35; break; }
-                            case 47: /* Moore Loop Fold [O] */ { const mA = Math.floor(angle/(Math.PI/2))*(Math.PI/2) + Math.PI/4; vx += Math.cos(mA+dist*0.03)*s*5; vy += Math.sin(mA+dist*0.03)*s*5; break; }
-                            case 48: /* Octagon Grid [O] */ { const p1 = px; const p2 = px*0.707 + py*0.707; const p3 = py; const p4 = px*-0.707 + py*0.707; const t1 = Math.round(p1/40)*40; const t2 = Math.round(p2/40)*40; const t3 = Math.round(p3/40)*40; const t4 = Math.round(p4/40)*40; const d1 = Math.abs(t1-p1), d2 = Math.abs(t2-p2), d3 = Math.abs(t3-p3), d4 = Math.abs(t4-p4); const md = Math.min(d1, d2, d3, d4); if (md === d1) { vx += (t1-p1)*s*0.5; } else if (md === d2) { vx += (t2-p2)*0.707*s*0.5; vy += (t2-p2)*0.707*s*0.5; } else if (md === d3) { vy += (t3-p3)*s*0.5; } else { vx -= (t4-p4)*0.707*s*0.5; vy += (t4-p4)*0.707*s*0.5; } break; }
-                            case 49: /* Peano Grid Sweep [O] */ { const isX = (Math.floor(px/30)+Math.floor(py/30))%2===0; if(isX) vx += (Math.floor(px/30)%2===0?1:-1)*s*6; else vy += (Math.floor(py/30)%2===0?1:-1)*s*6; break; }
-                            case 50: /* Radar Sweep [O] */ if(Math.abs(angle-(cell.rotation*2)%(Math.PI*2))<0.1 || Math.abs(angle-(cell.rotation*2)%(Math.PI*2))>Math.PI*2-0.1){ vx += Math.cos(angle)*s*6; vy += Math.sin(angle)*s*6; } break;
-                            case 51: /* Radial Spokes [O] */ { const spA = Math.round(angle*4)/4; vx += (Math.cos(spA)*dist-dx)*s*0.4; vy += (Math.sin(spA)*dist-dy)*s*0.4; break; }
-                            case 52: /* Serendipity Dots [O] */ { const sdTX = Math.floor(cell.x/50)*50+Math.cos(cell.id)*hw; const sdTY = Math.floor(cell.y/50)*50+Math.sin(cell.id)*hh; vx += (sdTX-px)*s*0.048; vy += (sdTY-py)*s*0.048; break; }
-                            case 53: /* Sierpinski Repulsion [O] */ { const tx = (px%60)-30; const ty = (py%52)-26; if (ty > Math.abs(tx)*1.732-26) { vx += Math.sign(tx)*s*5; vy -= s*5; } else { vx -= Math.sign(tx)*s*2; vy += s*2; } break; }
-                            case 54: /* Tartan Plaid [O] */ if(px%45<5) vy += Math.sin(px*0.01)*s*4; if(py%45<5) vx += Math.cos(py*0.01)*s*4; break;
-                            case 55: /* Triangle Tessellation [O] */ { const a1 = 0, a2 = Math.PI/3, a3 = 2*Math.PI/3; const p1 = px*Math.cos(a1) + py*Math.sin(a1); const p2 = px*Math.cos(a2) + py*Math.sin(a2); const p3 = px*Math.cos(a3) + py*Math.sin(a3); const t1 = Math.round(p1/30)*30, t2 = Math.round(p2/30)*30, t3 = Math.round(p3/30)*30; const d1 = Math.abs(t1-p1), d2 = Math.abs(t2-p2), d3 = Math.abs(t3-p3); if(d1 < d2 && d1 < d3) { vx += Math.cos(a1)*(t1-p1)*s*0.5; vy += Math.sin(a1)*(t1-p1)*s*0.5; } else if(d2 < d3) { vx += Math.cos(a2)*(t2-p2)*s*0.5; vy += Math.sin(a2)*(t2-p2)*s*0.5; } else { vx += Math.cos(a3)*(t3-p3)*s*0.5; vy += Math.sin(a3)*(t3-p3)*s*0.5; } break; }
-                            case 56: /* Vertical Pinstripes [O] */ vx += (Math.round(px/12)*12-px)*s*0.9; break;
-                            case 57: /* Voronoi Cells [O] */ vx += (Math.floor(px/300)*300+150-px)*s*0.6; vy += (Math.floor(py/300)*300+150-py)*s*0.6; break;
-                            case 58: /* Weave Lattice [O] */ vx += ((Math.floor(px/25)+Math.floor(py/25))%2==0?1:-1)*s*3; vy += -((Math.floor(px/25)+Math.floor(py/25))%2==0?1:-1)*s*3; break;
-                            case 59: /* Ziggurat [O] */ vx += (Math.floor(px/40)*40+(py%40)-px)*s*0.5; break;
-
-                            // Chroma
-                            case 60: /* Chromatic Wave [C] */ vx += Math.cos(angle)*Math.sin(dist*0.1 - cell.rotation)*s*1; break;
-                            case 61: /* Color Gradient Snap [C] */ vx += (Math.round(px/40)*40-px)*s*3.2; break;
-                            case 62: /* Color Grid Snap [C] */ { const cgOfs = (phase/360)*20; vx += (Math.round((px + cgOfs)/30)*30 - cgOfs - px)*s*0.6; break; }
-                            case 63: /* Green Channel Sieve [C] */ break;
-                            case 64: /* Intensity Well [C] */ vx += Math.cos(angle)*s*1.25; vy += Math.sin(angle)*s*1.25; break;
-
-                            // Spreader
-                            case 65: /* Concentric Repel [S] */ { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); const repel = Math.sin(dist * 0.1); vx += Math.cos(rA) * repel * rS * 10; vy += Math.sin(rA) * repel * rS * 10; break; }
-                            case 66: /* Noise Expulsion [S] */ { const rS = s * (1.0 + Math.random() * 2.0); vx += (Math.cos(px * 0.02 + py * 0.02) + (Math.random()-0.5)) * rS * 10; vy += (Math.sin(px * 0.02 - py * 0.02) + (Math.random()-0.5)) * rS * 10; break; }
-                            case 67: /* Wave Diffuser [S] */ { const rS = s * (1.0 + Math.random() * 2.0); vx += (Math.sin(py * 0.05) + (Math.random()-0.5)) * rS * 8; vy += (Math.cos(px * 0.05) + (Math.random()-0.5)) * rS * 8; break; }
-                            case 68: /* ZigZag Scatter [S] */ { const rS = s * (1.0 + Math.random() * 2.0); vx += ((((py / 30 | 0) % 2 === 0) ? 1 : -1) + (Math.random()-0.5)) * rS * 8; vy += ((((px / 30 | 0) % 2 === 0) ? 1 : -1) + (Math.random()-0.5)) * rS * 8; break; }
-
-                            // 3D
-                            case 69: /* Double Helix 3D [3D] */ { const t = cell.rotation * 4; const freq = 0.05; const amp = hw * 0.4; const wave1X = Math.sin(dy * freq + t) * amp; const wave1Z = Math.cos(dy * freq + t) * amp; const wave2X = Math.sin(dy * freq + t + Math.PI) * amp; const wave2Z = Math.cos(dy * freq + t + Math.PI) * amp; const pull1 = (wave1X - dx) * s * (wave1Z > 0 ? 3 : 0.5); const pull2 = (wave2X - dx) * s * (wave2Z > 0 ? 3 : 0.5); vx += Math.abs(wave1X - dx) < Math.abs(wave2X - dx) ? pull1 : pull2; vy += (Math.round(dy/20)*20 - dy) * s * 0.1; break; }
-                            case 70: /* Hyperbolic Funnel [3D] */ { const tF = cell.rotation * 2; const radiusAtY = Math.sqrt(Math.abs(dy)) * 12; const thetaF = Math.atan2(1, dx) + tF; const snapThetaF = Math.round(thetaF / (Math.PI/4)) * (Math.PI/4); const targetX = Math.cos(snapThetaF - tF) * radiusAtY; vx += (targetX - dx) * s * 2; vy += Math.sign(dy) * s * 2; break; }
-                            case 71: /* Mobius Strip [3D] */ { const u = Math.atan2(dy, dx); const vM = (dist - hw*0.5); const tM = cell.rotation * 2; const halfU = u * 0.5 + tM; const moX = (hw*0.5 + vM * Math.cos(halfU)) * Math.cos(u); const moY = (hw*0.5 + vM * Math.cos(halfU)) * Math.sin(u) * 0.5; vx += (moX - dx) * s; vy += (moY - dy) * s; if (Math.abs(vM) < hw*0.2) { vx += Math.cos(u) * Math.sin(vM*0.5)*s*5; } break; }
-                            case 72: /* Perspective Tunnel [3D] */ { const zT = (cell.rotation * 200) % 50; const ringDist = Math.round((dist - zT) / 50) * 50 + zT; const pullDist = ringDist - dist; vx += Math.cos(angle) * pullDist * s; vy += Math.sin(angle) * pullDist * s; const snapA = Math.round(angle / (Math.PI/6)) * (Math.PI/6); vx += (Math.cos(snapA)*dist - dx)*s*0.5; vy += (Math.sin(snapA)*dist - dy)*s*0.5; break; }
-                            case 73: /* Ripple Plane 3D [3D] */ { const pitch = 0.8; const gy = dy / Math.sin(pitch); const gx = dx; const rippleZ = Math.sin(Math.sqrt(gx*gx + gy*gy)*0.05 - cell.rotation*5) * 40; const projY = gy * Math.sin(pitch) - rippleZ * Math.cos(pitch); vy += (projY - dy) * s * 2; vx += (Math.round(gx/30)*30 - gx) * s * 0.5; break; }
-                            case 74: /* Rotating 3D Grid [3D] */ { const pitch = Math.sin(cell.rotation * 0.5) * 1.5; const yaw = cell.rotation; const cosY = Math.cos(yaw), sinY = Math.sin(yaw); const cosP = Math.cos(pitch), sinP = Math.sin(pitch); const gx = dx*cosY + dy*sinY*sinP; const gy = dy*cosP; vx += (Math.round(gx/25)*25 - gx)*s; vy += (Math.round(gy/25)*25 - gy)*s; break; }
-                            case 75: /* Rotating Cube Edges [3D] */ { const tC = cell.rotation; const cosT = Math.cos(tC), sinT = Math.sin(tC); const rx = dx * cosT - dy * sinT; const ry = dx * sinT + dy * cosT; const d1 = Math.abs(Math.round(rx/40)*40 - rx); const d2 = Math.abs(Math.round(ry/40)*40 - ry); const d3 = Math.abs(Math.round((rx+ry)/40)*40 - (rx+ry)); if (d1 < d2 && d1 < d3) { vx += (Math.round(rx/40)*40 - rx)*cosT * s; vy += (Math.round(rx/40)*40 - rx)*-sinT * s; } else if (d2 < d3) { vx += (Math.round(ry/40)*40 - ry)*sinT * s; vy += (Math.round(ry/40)*40 - ry)*cosT * s; } else { vx += (Math.round((rx+ry)/40)*40 - (rx+ry))*0.7 * s; vy += (Math.round((rx+ry)/40)*40 - (rx+ry))*0.7 * s; } break; }
-                            case 76: /* Torus Parametric [3D] */ { const R = hw * 0.5; const rR = hw * 0.25; const t = cell.rotation; const dCenter = Math.sqrt(dx*dx + (dy/0.5)*(dy/0.5)); if (Math.abs(dCenter - R) < rR) { const theta = Math.atan2(dy/0.5, dx); const phi = Math.atan2(dCenter - R, 0) + t*5; const snapTheta = Math.round(theta / (Math.PI/8)) * (Math.PI/8); const snapPhi = Math.round(phi / (Math.PI/4)) * (Math.PI/4); vx += (Math.cos(snapTheta)*(R + rR*Math.cos(snapPhi)) - dx) * s; vy += (Math.sin(snapTheta)*0.5*(R + rR*Math.cos(snapPhi)) - dy) * s; } break; }
-                            case 77: /* Wireframe Sphere [3D] */ { const r2 = hw*hw*0.64; const d2 = dx*dx + dy*dy; if (d2 < r2) { const z = Math.sqrt(r2 - d2); const t = cell.rotation * 2; const rx = dx * Math.cos(t) - z * Math.sin(t); const rz = dx * Math.sin(t) + z * Math.cos(t); const lat = Math.asin(dy / (hw*0.8)); const lon = Math.atan2(rx, rz); const snapLat = Math.round(lat / 0.3) * 0.3; const snapLon = Math.round(lon / 0.3) * 0.3; vx += (Math.sin(snapLon)*hw*0.8*Math.cos(lat) - dx)*s*0.5; vy += (Math.sin(snapLat)*hw*0.8 - dy)*s*0.5; } break; }
+                        if (Math.abs(dx) < hw && Math.abs(dy) < hh) {
+                            const nx = dx/hw; const ny = dy/hh;
+                            const t = Math.max(Math.abs(nx), Math.abs(ny));
+                            const edgeForce = hardEdges ? (t < 0.98 ? 1 : 0) : (1-t)*(1-t)*(3-2*(1-t));
+                            const s = cell.strengthBase * edgeForce * dt * (effectStrengths[cell.effectIndex] * 0.01);
                             
-                            // Cymatics
-                            case 78: /* Harmonic Resonance [A] */ { const freq = 0.15; const force = Math.sin(dist * freq) * Math.cos(dist * freq); vx -= Math.cos(angle) * force * s * 50; vy -= Math.sin(angle) * force * s * 50; break; }
-                            case 79: /* Low-Frequency Hum [A] */ { const freq = 0.03; const t = cell.rotation * 2; const fX = Math.sin(px * freq + t) * Math.cos(px * freq + t); const fY = Math.sin(py * freq + t) * Math.cos(py * freq + t); vx -= fX * s * 30; vy -= fY * s * 30; break; }
-                            case 80: /* Sawtooth Vibration [A] */ { const freq = 60; const sx = ((px + cell.rotation*30) % freq) / freq - 0.5; const sy = ((py - cell.rotation*30) % freq) / freq - 0.5; vx -= Math.sign(sx) * s * 6; vy -= Math.sign(sy) * s * 6; break; }
+                            if (s !== 0) activeColorFlag = 1; // Flag as moved by a cell
+                            
+                            const angle = Math.atan2(dy, dx); const dist = Math.sqrt(dx*dx + dy*dy);
+                            
+                            switch(cell.effectIndex) {
+                                // Fluid
+                                case 0: /* Bubble Repulsion */ if (dist < hw/2) { vx += Math.cos(angle)*s*8; vy += Math.sin(angle)*s*8; } break;
+                                case 1: /* Chaos Mix */ vx += (Math.random()-0.5)*s*10; vy += (Math.random()-0.5)*s*10; break;
+                                case 2: /* Concentric Spin */ vx += Math.cos(angle+1.57)*(Math.floor(dist/20)%2==0?1:-1)*s*4; vy += Math.sin(angle+1.57)*(Math.floor(dist/20)%2==0?1:-1)*s*4; break;
+                                case 3: /* Convergence */ vx -= Math.cos(angle)*s*4; vy -= Math.sin(angle)*s*4; break;
+                                case 4: /* Cross Wind */ vx += Math.sin(cell.rotation)*s*5; vy += Math.cos(cell.rotation)*s*5; break;
+                                case 5: /* Divergence */ vx += Math.cos(angle)*s*5; vy += Math.sin(angle)*s*5; break;
+                                case 6: /* DNA Spiral */ vx += Math.sin(py*0.05+cell.rotation*2)*s*5; break;
+                                case 7: /* Expansion Pulse */ vx += Math.cos(angle)*Math.sin(cell.rotation*4)*5*s; vy += Math.sin(angle)*Math.sin(cell.rotation*4)*5*s; break;
+                                case 8: /* Galaxy Spiral */ vx += Math.cos(angle+1.5+cell.rotation)*s*4; vy += Math.sin(angle+1.5+cell.rotation)*s*4; break;
+                                case 9: /* Lorenz Attractor */ vx += (10*(ny*10-nx*10))*s*0.05; break;
+                                case 10: /* Magnetic North */ vy -= 2*s; break;
+                                case 11: /* Maze Runner */ vx += ((Math.floor(px/20)+Math.floor(py/20))%2==0?1:-1)*s*4; break;
+                                case 12: /* Mirror Center */ vx -= (nx*5)*s; break;
+                                case 13: /* Orbitals */ vx += Math.cos(angle+1.57)*Math.sin(dist*0.15-cell.rotation*4)*s*5; vy += Math.sin(angle+1.57)*Math.sin(dist*0.15-cell.rotation*4)*s*5; break;
+                                case 14: /* Perlin Drift */ vx += Math.cos(px*0.01+py*0.01+cell.rotation)*s*4; vy += Math.sin(px*0.01-py*0.01+cell.rotation)*s*4; break;
+                                case 15: /* Radial Comb */ if (Math.abs(Math.sin((angle+cell.rotation)*8))>0.7){ vx += Math.cos(angle+1.57)*s*4; vy += Math.sin(angle+1.57)*s*4; } break;
+                                case 16: /* Ripples */ vx += Math.cos(angle)*Math.sin(dist*0.1-cell.rotation*10)*s*3; vy += Math.sin(angle)*Math.sin(dist*0.1-cell.rotation*10)*s*3; break;
+                                case 17: /* Shear */ vx += (ny>0?1:-1)*s*5; break;
+                                case 18: /* Sine Sieve */ if (Math.sin(px*0.1)*Math.sin(py*0.1)>0) vx += 2*s; break;
+                                case 19: /* Square Wave */ vx += Math.sign(Math.sin(py*0.1))*s*3; break;
+                                case 20: /* Tangent Twist */ vx += Math.tan(nx*0.5)*s*2; vy += Math.cos(ny*3)*s*3; break;
+                                case 21: /* Turbulent Flow */ vx += Math.sin(py*0.05+cell.rotation*0.5)*s*3; vy += Math.sin(px*0.05-cell.rotation*0.5)*s*3; break;
+                                case 22: /* Vertical Gusts */ vy += Math.cos(px*0.02+cell.rotation*3)*s*5; break;
+                                case 23: /* Vortex */ vx += Math.cos(angle+1.57)*s*4; vy += Math.sin(angle+1.57)*s*4; break;
+                                case 24: /* Warp Drive */ vx += Math.cos(angle)*(1+s*3); vy += Math.sin(angle)*(1+s*3); break;
+                                case 25: /* Wind Gusts */ vx += Math.sin(py*0.01+cell.rotation*5)*s*6; break;
+                                case 26: /* Zoom Out */ vx += dx*0.05*s; vy += dy*0.05*s; break;
+
+                                // Organic
+                                case 27: /* Binary Tree [O] */ { const tAng = Math.atan2(py-height, px-width/2); vx += Math.cos(tAng)*s*4; vy += Math.sin(tAng)*s*4; break; }
+                                case 28: /* Celtic Knots [O] */ { const gridX = Math.round(px / 60) * 60; const gridY = Math.round(py / 60) * 60; const lD = Math.sqrt((px-gridX)**2 + (py-gridY)**2); if (lD > 0) { const targetR = lD > 30 ? 45 : 15; const pull = (targetR - lD) * s * 0.3; vx += ((px-gridX)/lD) * pull; vy += ((py-gridY)/lD) * pull; vx += ((py-gridY)/lD) * s * 2; vy -= ((px-gridX)/lD) * s * 2; } break; }
+                                case 29: /* Checkerboard Push [O] */ vx += ((Math.floor(px/300)+Math.floor(py/300))%2==0?1:-1)*s*3; break;
+                                case 30: /* Chevron Tiling [O] */ { const segX = Math.floor(px / 40); const dir = (segX % 2 === 0) ? 1 : -1; const yTarget = Math.round((py - px * dir * 0.5) / 30) * 30 + px * dir * 0.5; vy += (yTarget - py) * s * 0.8; vx += dir * s * 2; break; }
+                                case 31: /* Circuit Board [O] */ { const cxS = Math.round(px/20)*20; const cyS = Math.round(py/20)*20; if(Math.abs(cxS-px)<Math.abs(cyS-py)) vx += (cxS-px)*s*0.9; else vy += (cyS-py)*s*0.9; break; }
+                                case 32: /* Concentric Squares [O] */ vx += (Math.round(dx/375)*375-dx)*s*0.5; vy += (Math.round(dy/375)*375-dy)*s*0.5; break;
+                                case 33: /* Crystallize [O] */ vx += (Math.round(px/1125)*1125-px)*s*0.6; vy += (Math.round(py/1125)*1125-py)*s*0.6; break;
+                                case 34: /* Diagonal Crosshatch [O] */ vx += ((px+py)%30<(px-py)%30?1:-1)*s*2; break;
+                                case 35: /* Diamond Dot Array [O] */ { const dSu = Math.round((px+py)/25)*25; const dDi = Math.round((px-py)/25)*25; vx += ((dSu+dDi)/2-px)*s*0.7; vy += ((dSu-dDi)/2-py)*s*0.7; break; }
+                                case 36: /* Diamond Lattice [O] */ vx += Math.cos((Math.abs(px%40-20)+Math.abs(py%40-20)))*s*2; break;
+                                case 37: /* Dotted Grid [O] */ vx += (Math.round(px/15)*15-px)*s*0.8; vy += (Math.round(py/15)*15-py)*s*0.8; break;
+                                case 38: /* Dotted Spirals [O] */ { const sdA = angle+dist*0.033; vx += (Math.cos(Math.round(sdA*10)/10)*dist-dx)*s*0.4; vy += (Math.sin(Math.round(sdA*10)/10)*dist-dy)*s*0.4; break; }
+                                case 39: /* Dragon Curve Fold [O] */ { const dD = (Math.floor(px/40)+Math.floor(py/40))%2===0?1.57:-1.57; vx += (dx*Math.cos(dD)-dy*Math.sin(dD))*s*0.1; vy += (dx*Math.sin(dD)+dy*Math.cos(dD))*s*0.1; break; }
+                                case 40: /* Fibonacci Spiral [O] */ { const gld = Math.PI*(3-Math.sqrt(5)); const fAng = Math.round(dist*0.1)*gld+cell.rotation; vx += (cell.x+Math.cos(fAng)*dist-px)*s*0.125; vy += (cell.y+Math.sin(fAng)*dist-py)*s*0.125; break; }
+                                case 41: /* Gosper Hex Flow [O] */ { const gA = Math.floor(angle/(Math.PI/3))*(Math.PI/3) + Math.PI/6 + cell.rotation; vx += Math.cos(gA)*s*6; vy += Math.sin(gA)*s*6; break; }
+                                case 42: /* Hex Grid [O] */ vx += (Math.round(px/30)*30-px)*s*0.4; vy += (Math.round(py/25)*25-py)*s*0.4; break;
+                                case 43: /* Hexagonal Rings [O] */ { const a = Math.atan2(dy, dx); const a6 = Math.round(a / (Math.PI/3)) * (Math.PI/3); const rHex = dist * Math.cos(a - a6); const targetR = Math.round(rHex / 30) * 30; const pull = (targetR - rHex) * s * 0.4; vx += Math.cos(a6) * pull; vy += Math.sin(a6) * pull; break; }
+                                case 44: /* Hilbert Curve [O] */ vx += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.sin(cell.rotation)*s*5:-Math.sin(cell.rotation)*s*5; vy += (Math.floor(nx*8+8)+Math.floor(ny*8+8))%2==0?Math.cos(cell.rotation)*s*5:-Math.cos(cell.rotation)*s*5; break;
+                                case 45: /* Honeycomb [O] */ vx += (Math.round(px/100)*100-px)*s*0.3; vy += (Math.round(py/60)*60-py)*s*0.3; break;
+                                case 46: /* Isometric Cube [O] */ { const ix = Math.round((px-py)/1.73/30)*30*1.73; const iy = Math.round((px+py)/30)*30; vx += (ix+iy/2-px)*s*0.35; vy += (iy/2-py)*s*0.35; break; }
+                                case 47: /* Moore Loop Fold [O] */ { const mA = Math.floor(angle/(Math.PI/2))*(Math.PI/2) + Math.PI/4; vx += Math.cos(mA+dist*0.03)*s*5; vy += Math.sin(mA+dist*0.03)*s*5; break; }
+                                case 48: /* Octagon Grid [O] */ { const p1 = px; const p2 = px*0.707 + py*0.707; const p3 = py; const p4 = px*-0.707 + py*0.707; const t1 = Math.round(p1/40)*40; const t2 = Math.round(p2/40)*40; const t3 = Math.round(p3/40)*40; const t4 = Math.round(p4/40)*40; const d1 = Math.abs(t1-p1), d2 = Math.abs(t2-p2), d3 = Math.abs(t3-p3), d4 = Math.abs(t4-p4); const md = Math.min(d1, d2, d3, d4); if (md === d1) { vx += (t1-p1)*s*0.5; } else if (md === d2) { vx += (t2-p2)*0.707*s*0.5; vy += (t2-p2)*0.707*s*0.5; } else if (md === d3) { vy += (t3-p3)*s*0.5; } else { vx -= (t4-p4)*0.707*s*0.5; vy += (t4-p4)*0.707*s*0.5; } break; }
+                                case 49: /* Peano Grid Sweep [O] */ { const isX = (Math.floor(px/30)+Math.floor(py/30))%2===0; if(isX) vx += (Math.floor(px/30)%2===0?1:-1)*s*6; else vy += (Math.floor(py/30)%2===0?1:-1)*s*6; break; }
+                                case 50: /* Radar Sweep [O] */ if(Math.abs(angle-(cell.rotation*2)%(Math.PI*2))<0.1 || Math.abs(angle-(cell.rotation*2)%(Math.PI*2))>Math.PI*2-0.1){ vx += Math.cos(angle)*s*6; vy += Math.sin(angle)*s*6; } break;
+                                case 51: /* Radial Spokes [O] */ { const spA = Math.round(angle*4)/4; vx += (Math.cos(spA)*dist-dx)*s*0.4; vy += (Math.sin(spA)*dist-dy)*s*0.4; break; }
+                                case 52: /* Serendipity Dots [O] */ { const sdTX = Math.floor(cell.x/50)*50+Math.cos(cell.id)*hw; const sdTY = Math.floor(cell.y/50)*50+Math.sin(cell.id)*hh; vx += (sdTX-px)*s*0.048; vy += (sdTY-py)*s*0.048; break; }
+                                case 53: /* Sierpinski Repulsion [O] */ { const tx = (px%60)-30; const ty = (py%52)-26; if (ty > Math.abs(tx)*1.732-26) { vx += Math.sign(tx)*s*5; vy -= s*5; } else { vx -= Math.sign(tx)*s*2; vy += s*2; } break; }
+                                case 54: /* Tartan Plaid [O] */ if(px%45<5) vy += Math.sin(px*0.01)*s*4; if(py%45<5) vx += Math.cos(py*0.01)*s*4; break;
+                                case 55: /* Triangle Tessellation [O] */ { const a1 = 0, a2 = Math.PI/3, a3 = 2*Math.PI/3; const p1 = px*Math.cos(a1) + py*Math.sin(a1); const p2 = px*Math.cos(a2) + py*Math.sin(a2); const p3 = px*Math.cos(a3) + py*Math.sin(a3); const t1 = Math.round(p1/30)*30, t2 = Math.round(p2/30)*30, t3 = Math.round(p3/30)*30; const d1 = Math.abs(t1-p1), d2 = Math.abs(t2-p2), d3 = Math.abs(t3-p3); if(d1 < d2 && d1 < d3) { vx += Math.cos(a1)*(t1-p1)*s*0.5; vy += Math.sin(a1)*(t1-p1)*s*0.5; } else if(d2 < d3) { vx += Math.cos(a2)*(t2-p2)*s*0.5; vy += Math.sin(a2)*(t2-p2)*s*0.5; } else { vx += Math.cos(a3)*(t3-p3)*s*0.5; vy += Math.sin(a3)*(t3-p3)*s*0.5; } break; }
+                                case 56: /* Vertical Pinstripes [O] */ vx += (Math.round(px/12)*12-px)*s*0.9; break;
+                                case 57: /* Voronoi Cells [O] */ vx += (Math.floor(px/300)*300+150-px)*s*0.6; vy += (Math.floor(py/300)*300+150-py)*s*0.6; break;
+                                case 58: /* Weave Lattice [O] */ vx += ((Math.floor(px/25)+Math.floor(py/25))%2==0?1:-1)*s*3; vy += -((Math.floor(px/25)+Math.floor(py/25))%2==0?1:-1)*s*3; break;
+                                case 59: /* Ziggurat [O] */ vx += (Math.floor(px/40)*40+(py%40)-px)*s*0.5; break;
+
+                                // Chroma
+                                case 60: /* Chromatic Wave [C] */ vx += Math.cos(angle)*Math.sin(dist*0.1 - cell.rotation)*s*1; break;
+                                case 61: /* Color Gradient Snap [C] */ vx += (Math.round(px/40)*40-px)*s*3.2; break;
+                                case 62: /* Color Grid Snap [C] */ { const cgOfs = (phase/360)*20; vx += (Math.round((px + cgOfs)/30)*30 - cgOfs - px)*s*0.6; break; }
+                                case 63: /* Green Channel Sieve [C] */ break;
+                                case 64: /* Intensity Well [C] */ vx += Math.cos(angle)*s*1.25; vy += Math.sin(angle)*s*1.25; break;
+
+                                // Spreader
+                                case 65: /* Concentric Repel [S] */ { const rS = s * (1.0 + Math.random() * 2.0); const rA = angle + (Math.random() - 0.5); const repel = Math.sin(dist * 0.1); vx += Math.cos(rA) * repel * rS * 10; vy += Math.sin(rA) * repel * rS * 10; break; }
+                                case 66: /* Noise Expulsion [S] */ { const rS = s * (1.0 + Math.random() * 2.0); vx += (Math.cos(px * 0.02 + py * 0.02) + (Math.random()-0.5)) * rS * 10; vy += (Math.sin(px * 0.02 - py * 0.02) + (Math.random()-0.5)) * rS * 10; break; }
+                                case 67: /* Wave Diffuser [S] */ { const rS = s * (1.0 + Math.random() * 2.0); vx += (Math.sin(py * 0.05) + (Math.random()-0.5)) * rS * 8; vy += (Math.cos(px * 0.05) + (Math.random()-0.5)) * rS * 8; break; }
+                                case 68: /* ZigZag Scatter [S] */ { const rS = s * (1.0 + Math.random() * 2.0); vx += ((((py / 30 | 0) % 2 === 0) ? 1 : -1) + (Math.random()-0.5)) * rS * 8; vy += ((((px / 30 | 0) % 2 === 0) ? 1 : -1) + (Math.random()-0.5)) * rS * 8; break; }
+
+                                // 3D
+                                case 69: /* Double Helix 3D [3D] */ { const t = cell.rotation * 4; const freq = 0.05; const amp = hw * 0.4; const wave1X = Math.sin(dy * freq + t) * amp; const wave1Z = Math.cos(dy * freq + t) * amp; const wave2X = Math.sin(dy * freq + t + Math.PI) * amp; const wave2Z = Math.cos(dy * freq + t + Math.PI) * amp; const pull1 = (wave1X - dx) * s * (wave1Z > 0 ? 3 : 0.5); const pull2 = (wave2X - dx) * s * (wave2Z > 0 ? 3 : 0.5); vx += Math.abs(wave1X - dx) < Math.abs(wave2X - dx) ? pull1 : pull2; vy += (Math.round(dy/20)*20 - dy) * s * 0.1; break; }
+                                case 70: /* Hyperbolic Funnel [3D] */ { const tF = cell.rotation * 2; const radiusAtY = Math.sqrt(Math.abs(dy)) * 12; const thetaF = Math.atan2(1, dx) + tF; const snapThetaF = Math.round(thetaF / (Math.PI/4)) * (Math.PI/4); const targetX = Math.cos(snapThetaF - tF) * radiusAtY; vx += (targetX - dx) * s * 2; vy += Math.sign(dy) * s * 2; break; }
+                                case 71: /* Mobius Strip [3D] */ { const u = Math.atan2(dy, dx); const vM = (dist - hw*0.5); const tM = cell.rotation * 2; const halfU = u * 0.5 + tM; const moX = (hw*0.5 + vM * Math.cos(halfU)) * Math.cos(u); const moY = (hw*0.5 + vM * Math.cos(halfU)) * Math.sin(u) * 0.5; vx += (moX - dx) * s; vy += (moY - dy) * s; if (Math.abs(vM) < hw*0.2) { vx += Math.cos(u) * Math.sin(vM*0.5)*s*5; } break; }
+                                case 72: /* Perspective Tunnel [3D] */ { const zT = (cell.rotation * 200) % 50; const ringDist = Math.round((dist - zT) / 50) * 50 + zT; const pullDist = ringDist - dist; vx += Math.cos(angle) * pullDist * s; vy += Math.sin(angle) * pullDist * s; const snapA = Math.round(angle / (Math.PI/6)) * (Math.PI/6); vx += (Math.cos(snapA)*dist - dx)*s*0.5; vy += (Math.sin(snapA)*dist - dy)*s*0.5; break; }
+                                case 73: /* Ripple Plane 3D [3D] */ { const pitch = 0.8; const gy = dy / Math.sin(pitch); const gx = dx; const rippleZ = Math.sin(Math.sqrt(gx*gx + gy*gy)*0.05 - cell.rotation*5) * 40; const projY = gy * Math.sin(pitch) - rippleZ * Math.cos(pitch); vy += (projY - dy) * s * 2; vx += (Math.round(gx/30)*30 - gx) * s * 0.5; break; }
+                                case 74: /* Rotating 3D Grid [3D] */ { const pitch = Math.sin(cell.rotation * 0.5) * 1.5; const yaw = cell.rotation; const cosY = Math.cos(yaw), sinY = Math.sin(yaw); const cosP = Math.cos(pitch), sinP = Math.sin(pitch); const gx = dx*cosY + dy*sinY*sinP; const gy = dy*cosP; vx += (Math.round(gx/25)*25 - gx)*s; vy += (Math.round(gy/25)*25 - gy)*s; break; }
+                                case 75: /* Rotating Cube Edges [3D] */ { const tC = cell.rotation; const cosT = Math.cos(tC), sinT = Math.sin(tC); const rx = dx * cosT - dy * sinT; const ry = dx * sinT + dy * cosT; const d1 = Math.abs(Math.round(rx/40)*40 - rx); const d2 = Math.abs(Math.round(ry/40)*40 - ry); const d3 = Math.abs(Math.round((rx+ry)/40)*40 - (rx+ry)); if (d1 < d2 && d1 < d3) { vx += (Math.round(rx/40)*40 - rx)*cosT * s; vy += (Math.round(rx/40)*40 - rx)*-sinT * s; } else if (d2 < d3) { vx += (Math.round(ry/40)*40 - ry)*sinT * s; vy += (Math.round(ry/40)*40 - ry)*cosT * s; } else { vx += (Math.round((rx+ry)/40)*40 - (rx+ry))*0.7 * s; vy += (Math.round((rx+ry)/40)*40 - (rx+ry))*0.7 * s; } break; }
+                                case 76: /* Torus Parametric [3D] */ { const R = hw * 0.5; const rR = hw * 0.25; const t = cell.rotation; const dCenter = Math.sqrt(dx*dx + (dy/0.5)*(dy/0.5)); if (Math.abs(dCenter - R) < rR) { const theta = Math.atan2(dy/0.5, dx); const phi = Math.atan2(dCenter - R, 0) + t*5; const snapTheta = Math.round(theta / (Math.PI/8)) * (Math.PI/8); const snapPhi = Math.round(phi / (Math.PI/4)) * (Math.PI/4); vx += (Math.cos(snapTheta)*(R + rR*Math.cos(snapPhi)) - dx) * s; vy += (Math.sin(snapTheta)*0.5*(R + rR*Math.cos(snapPhi)) - dy) * s; } break; }
+                                case 77: /* Wireframe Sphere [3D] */ { const r2 = hw*hw*0.64; const d2 = dx*dx + dy*dy; if (d2 < r2) { const z = Math.sqrt(r2 - d2); const t = cell.rotation * 2; const rx = dx * Math.cos(t) - z * Math.sin(t); const rz = dx * Math.sin(t) + z * Math.cos(t); const lat = Math.asin(dy / (hw*0.8)); const lon = Math.atan2(rx, rz); const snapLat = Math.round(lat / 0.3) * 0.3; const snapLon = Math.round(lon / 0.3) * 0.3; vx += (Math.sin(snapLon)*hw*0.8*Math.cos(lat) - dx)*s*0.5; vy += (Math.sin(snapLat)*hw*0.8 - dy)*s*0.5; } break; }
+                                
+                                // Cymatics
+                                case 78: /* Harmonic Resonance [A] */ { const freq = 0.15; const force = Math.sin(dist * freq) * Math.cos(dist * freq); vx -= Math.cos(angle) * force * s * 50; vy -= Math.sin(angle) * force * s * 50; break; }
+                                case 79: /* Low-Frequency Hum [A] */ { const freq = 0.03; const t = cell.rotation * 2; const fX = Math.sin(px * freq + t) * Math.cos(px * freq + t); const fY = Math.sin(py * freq + t) * Math.cos(py * freq + t); vx -= fX * s * 30; vy -= fY * s * 30; break; }
+                                case 80: /* Sawtooth Vibration [A] */ { const freq = 60; const sx = ((px + cell.rotation*30) % freq) / freq - 0.5; const sy = ((py - cell.rotation*30) % freq) / freq - 0.5; vx -= Math.sign(sx) * s * 6; vy -= Math.sign(sy) * s * 6; break; }
+                            }
                         }
                     }
+
+                    // MAX SPEED LIMIT CLAMP
+                    let preSpeedSq = vx*vx + vy*vy;
+                    if (preSpeedSq > maxSq) {
+                        const m = maxS / Math.sqrt(preSpeedSq);
+                        vx *= m;
+                        vy *= m;
+                        preSpeedSq = maxSq;
+                    }
+
+                    px += vx * CONSTANTS.BASE_SPEED * dt;
+                    py += vy * CONSTANTS.BASE_SPEED * dt;
+                    
+                    // DYNAMIC MOMENTUM: Fast particles slip through friction to escape cells
+                    const speedRatio = preSpeedSq / maxSq;
+                    const dynamicFriction = CONSTANTS.FRICTION + (0.055 * speedRatio);
+                    const pFPow = Math.pow(dynamicFriction, dt);
+                    
+                    vx *= pFPow;
+                    vy *= pFPow;
+                    
+                    const currentV2 = (vx*vx + vy*vy);
+                    const targetLuma = Math.min(1.0, currentV2 / maxSq);
+                    luma = Math.max(targetLuma, luma * lumaDecayPow);
+                } else {
+                    vx = 0;
+                    vy = 0;
+                    luma = 1.0;
+                    activeColorFlag = 1;
                 }
 
-                // MAX SPEED LIMIT CLAMP
-                let preSpeedSq = vx*vx + vy*vy;
-                if (preSpeedSq > maxSq) {
-                    const m = maxS / Math.sqrt(preSpeedSq);
-                    vx *= m;
-                    vy *= m;
-                    preSpeedSq = maxSq;
-                }
-
-                px += vx * CONSTANTS.BASE_SPEED * dt;
-                py += vy * CONSTANTS.BASE_SPEED * dt;
-                
-                // DYNAMIC MOMENTUM: Fast particles slip through friction to escape cells
-                const speedRatio = preSpeedSq / maxSq;
-                const dynamicFriction = CONSTANTS.FRICTION + (0.055 * speedRatio);
-                const pFPow = Math.pow(dynamicFriction, dt);
-                
-                vx *= pFPow;
-                vy *= pFPow;
                 phase = (phase + cycleSpeed * dt) % 360;
 
                 if (px < 0) px += width; else if (px >= width) px -= width;
                 if (py < 0) py += height; else if (py >= height) py -= height;
-
-                const currentV2 = (vx*vx + vy*vy);
-                const targetLuma = Math.min(1.0, currentV2 / maxSq);
-                luma = Math.max(targetLuma, luma * lumaDecayPow);
 
                 particleData[idx] = px; particleData[idx+1] = py;
                 particleData[idx+2] = vx; particleData[idx+3] = vy;
@@ -1000,10 +1048,36 @@
             requestAnimationFrame(engineLoop);
         }
 
-        setupUIEvents();
-        updateCanvasFilter();
-        resizeEngine(); 
-        requestAnimationFrame(engineLoop);
+        const logoImg = new Image();
+        // Removed crossOrigin="Anonymous" so local relative paths work properly
+        logoImg.onload = () => {
+            AppState.logoImg = logoImg;
+            AppState.startupTimer = 2000;
+            initSim();
+        };
+        logoImg.onerror = (e) => {
+            console.warn("Could not load logo.png. Ensure it is in the same folder and you are running a local web server.", e);
+            initSim();
+        };
+        logoImg.src = './logo.png';
+
+        let initSimDone = false;
+        function initSim() {
+            if (initSimDone) return;
+            initSimDone = true;
+            setupUIEvents();
+            updateCanvasFilter();
+            resizeEngine(); 
+            requestAnimationFrame(engineLoop);
+            
+            setTimeout(() => {
+                const cvs = document.getElementById('canvas');
+                if (cvs) cvs.style.opacity = '1';
+            }, 50);
+        }
+        
+        setTimeout(initSim, 3000); // Safety fallback
+
     </script>
 </body>
 </html>
