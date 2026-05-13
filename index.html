@@ -104,6 +104,7 @@
             <button class="btn" id="toggle-all">[ Toggle_All ]</button>
             <button class="btn" id="randomise">[ RANDOMISE ]</button>
             <button class="btn" id="btn-analysis">[ ANALYSIS ]</button>
+            <button class="btn" id="btn-fullscreen">[ FULLSCREEN ]</button>
             <button class="btn" id="reset-settings">[ RESET ]</button>
             <button class="btn" id="close-menu">[ RESUME ]</button>
         </div>
@@ -263,6 +264,8 @@
         // ==========================================
         // 2. STATE MANAGEMENT
         // ==========================================
+        let wakeLockSentinel = null;
+
         const AppState = {
             width: window.innerWidth,
             height: window.innerHeight,
@@ -389,6 +392,10 @@
         const menu = $('menu-overlay');
 
         function updateUIToggles() {
+            const isFs = !!document.fullscreenElement;
+            const fsBtn = $('btn-fullscreen');
+            if (fsBtn) fsBtn.classList.toggle('active', isFs);
+
             $('btn-soft').classList.toggle('active', !AppState.config.hardEdges);
             $('btn-hard').classList.toggle('active', AppState.config.hardEdges);
             $('btn-velocity-luma').classList.toggle('active', AppState.config.velocityLuma);
@@ -473,6 +480,39 @@
                 updateUIToggles();
                 syncSave();
             };
+
+            $('btn-fullscreen').onclick = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(e => console.warn("Fullscreen error:", e));
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            };
+
+            const requestWakeLock = async () => {
+                if ('wakeLock' in navigator) {
+                    try { 
+                        wakeLockSentinel = await navigator.wakeLock.request('screen'); 
+                    } catch (err) { 
+                        console.warn('Wake Lock error:', err); 
+                    }
+                }
+            };
+
+            document.addEventListener('fullscreenchange', () => {
+                updateUIToggles();
+                if (document.fullscreenElement) {
+                    requestWakeLock();
+                } else if (wakeLockSentinel) {
+                    wakeLockSentinel.release().then(() => { wakeLockSentinel = null; });
+                }
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && document.fullscreenElement) {
+                    requestWakeLock();
+                }
+            });
             
             $('slider-max-speed').oninput = e => {
                 AppState.config.maxSpeed = parseInt(e.target.value);
