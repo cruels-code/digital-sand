@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIGITAL SAND - V4.9.1 (ALPHABETIZED)</title>
+    <title>ENTROPY ENGINE</title>
     <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #ffffff; --bg: #000; --panel-bg: #050505; --border: #333; --text-muted: #888; }
@@ -56,7 +56,7 @@
     <div id="fps-counter">FPS: 00</div>
 
     <div id="menu-overlay">
-        <div class="terminal-header"><h2>DIGITAL SAND - V4.9.1 (ALPHABETIZED)</h2></div>
+        <div class="terminal-header"><h2>ENTROPY ENGINE</h2></div>
 
         <div class="settings-panel">
             <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end;">
@@ -628,18 +628,24 @@
                 this.changeMovement();
             }
             changeMovement() {
-                const angle = Math.floor(Math.random() * 4) * (Math.PI / 2);
+                const currentAxis = (Math.abs(this.targetVx) > Math.abs(this.targetVy)) ? 'x' : 'y';
+                // 85% chance to make a sharp 90-degree turn, 15% chance to reverse or continue forward
+                const newAxis = Math.random() < 0.85 ? (currentAxis === 'x' ? 'y' : 'x') : currentAxis;
+                const dir = Math.random() < 0.5 ? 1 : -1;
+
+                this.targetVx = 0;
+                this.targetVy = 0;
                 
                 if (this.isSpreader) {
                     const speed = 3.0 + Math.random() * 5.0;
-                    this.targetVx = Math.cos(angle) * speed; 
-                    this.targetVy = Math.sin(angle) * speed;
-                    this.moveTimer = 2000 + Math.random() * 3000;
+                    if (newAxis === 'x') this.targetVx = speed * dir;
+                    else this.targetVy = speed * dir;
+                    this.moveTimer = 1500 + Math.random() * 3000;
                 } else {
-                    const speed = 0.5 + Math.random() * 4.5;
-                    this.targetVx = Math.cos(angle) * speed; 
-                    this.targetVy = Math.sin(angle) * speed;
-                    this.moveTimer = 1000 + Math.random() * 2000;
+                    const speed = 1.5 + Math.random() * 4.5;
+                    if (newAxis === 'x') this.targetVx = speed * dir;
+                    else this.targetVy = speed * dir;
+                    this.moveTimer = 1000 + Math.random() * 2500;
                 }
             }
             update(dt) {
@@ -657,11 +663,20 @@
                 if (this.timer >= this.duration || isDisabled) this.reset();
                 else if (this.moveTimer <= 0) this.changeMovement();
                 
-                const inertiaEase = 1 - Math.pow(0.96, dt); 
+                // Mechanical acceleration: quickly speed up to target velocity
+                const inertiaEase = 1 - Math.pow(0.92, dt); 
                 this.vx += (this.targetVx - this.vx) * inertiaEase;
                 this.vy += (this.targetVy - this.vy) * inertiaEase;
-                this.x += this.vx * dt; this.y += this.vy * dt;
-                this.rotation += 0.015 * dt;
+
+                // Mechanical braking: aggressively bleed off momentum on the inactive axis to carve sharp corners
+                if (this.targetVx === 0) this.vx *= Math.pow(0.5, dt);
+                if (this.targetVy === 0) this.vy *= Math.pow(0.5, dt);
+
+                this.x += this.vx * dt; 
+                this.y += this.vy * dt;
+                
+                // Slow down internal rotation so the mechanical shapes stay more rigid and structured
+                this.rotation += 0.005 * dt;
                 
                 if (this.x < 0) this.x += AppState.width; else if (this.x >= AppState.width) this.x -= AppState.width;
                 if (this.y < 0) this.y += AppState.height; else if (this.y >= AppState.height) this.y -= AppState.height;
