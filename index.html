@@ -392,7 +392,8 @@
         const menu = $('menu-overlay');
 
         function updateUIToggles() {
-            const isFs = !!document.fullscreenElement;
+            // Check both DOM fullscreen and F11 Window fullscreen
+            const isFs = !!document.fullscreenElement || (window.innerWidth === screen.width && window.innerHeight === screen.height);
             const fsBtn = $('btn-fullscreen');
             if (fsBtn) fsBtn.classList.toggle('active', isFs);
 
@@ -489,31 +490,51 @@
                 }
             };
 
+            // --- BULLETPROOF WAKE LOCK ---
             const requestWakeLock = async () => {
                 if ('wakeLock' in navigator) {
                     try { 
-                        wakeLockSentinel = await navigator.wakeLock.request('screen'); 
+                        if (!wakeLockSentinel) {
+                            wakeLockSentinel = await navigator.wakeLock.request('screen'); 
+                            wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; });
+                        }
                     } catch (err) { 
                         console.warn('Wake Lock error:', err); 
                     }
                 }
             };
 
-            document.addEventListener('fullscreenchange', () => {
-                updateUIToggles();
-                if (document.fullscreenElement) {
-                    requestWakeLock();
-                } else if (wakeLockSentinel) {
-                    wakeLockSentinel.release().then(() => { wakeLockSentinel = null; });
+            const releaseWakeLock = () => {
+                if (wakeLockSentinel) {
+                    wakeLockSentinel.release();
+                    wakeLockSentinel = null;
                 }
+            };
+
+            const checkFullscreenState = () => {
+                const isFs = !!document.fullscreenElement || (window.innerWidth === screen.width && window.innerHeight === screen.height);
+                if (isFs) {
+                    requestWakeLock();
+                } else {
+                    releaseWakeLock();
+                }
+                updateUIToggles();
+            };
+
+            // Catch F11 through window resizing
+            window.addEventListener('resize', checkFullscreenState);
+            // Catch DOM Fullscreen through the button
+            document.addEventListener('fullscreenchange', checkFullscreenState);
+            // Catch Alt-Tabbing back into the browser
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') checkFullscreenState();
+            });
+            // Failsafe: Some browsers require a click to grant a wake lock if F11 was used
+            document.addEventListener('click', () => {
+                const isFs = !!document.fullscreenElement || (window.innerWidth === screen.width && window.innerHeight === screen.height);
+                if (isFs) requestWakeLock();
             });
 
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && document.fullscreenElement) {
-                    requestWakeLock();
-                }
-            });
-            
             $('slider-max-speed').oninput = e => {
                 AppState.config.maxSpeed = parseInt(e.target.value);
                 $('label-max-speed').innerText = AppState.config.maxSpeed;
@@ -737,6 +758,9 @@
             AppState.width = canvas.width = Math.floor(window.innerWidth);
             AppState.height = canvas.height = Math.floor(window.innerHeight);
             if (AppState.width <= 0 || AppState.height <= 0) return;
+            
+            // Ensure UI updates if resized via F11 or Window Snapping
+            updateUIToggles();
             
             let validPixels = null;
             if (AppState.logoImg && AppState.startupTimer > 0) {
